@@ -24,15 +24,15 @@ Let's see what's happening. Here is a little project with complex structure, fir
 
 .examples  
 ├─ add  
-│  ├─ include  
-│  │  └─ add.h  
-│  └─ src  
-│     └─ add.cpp  
+│    ├─ include  
+│    │    └─ add.h  
+│    └─ src  
+│         └─ add.cpp  
 └─ sub  
-   ├─ include  
-   │  └─ sub.h  
-   └─ lib  
-      └─ libsub.dll
+     ├─ include  
+     │    └─ sub.h  
+     └─ lib  
+          └─ libsub.dll
 
 <!-- .example
 |- main.cpp
