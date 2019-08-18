@@ -145,27 +145,6 @@ Target::Target(const string& _full_name) : full_name(_full_name)
 	}
 }
 
-AutoMaker::AutoMaker()
-{
-	string init_path = pwd();
-	string current_path = init_path;
-
-	while(!is_root(current_path) && !has_makefile(current_path))
-	{
-		cd("..");
-		current_path = pwd();
-	}
-
-	if(!has_makefile(current_path))
-	{
-		cd(init_path);
-		current_path = init_path;
-	}
-
-	get_files();
-	extract_info();
-}
-
 void AutoMaker::generate()
 {
 	ofstream AutoMakefile("AutoMakefile");
@@ -233,7 +212,8 @@ void AutoMaker::generate()
 		AutoMakefile << "PATH := " << RPATH << "$(PATH)" << endl << endl;
 	}
 
-	string main = "$(BINDIR)/" + Target(pwd()).name + ".exe";
+	string main_base = Target(pwd()).name;
+	string main = "$(BINDIR)/" + main_base + ".exe";
 	AutoMakefile << "all: " << main << endl << endl;
 
 	AutoMakefile << main << ": $(OBJS)" << endl;
@@ -249,14 +229,35 @@ void AutoMaker::generate()
 	AutoMakefile << "\t" << main << endl << endl;
 
 	AutoMakefile << "clean:" << endl;
-	AutoMakefile << "\tdel $(BINDIR)\\*.o" << endl;
-	AutoMakefile << "\tdel $(BINDIR)\\" << Target(pwd()).name << ".exe" << endl;
+	AutoMakefile << "\tif exist $(BINDIR)\\*.o (del $(BINDIR)\\*.o)" << endl;
+	AutoMakefile << "\tif exist $(BINDIR)\\" << main_base << ".exe (del $(BINDIR)\\" << main_base << ".exe)" << endl;
 
 	AutoMakefile.close();
 }
 
 void AutoMaker::update()
 {
+	if(!here)
+	{
+		string init_path = pwd();
+		string current_path = init_path;
+
+		while(!is_root(current_path) && !has_makefile(current_path))
+		{
+			cd("..");
+			current_path = pwd();
+		}
+
+		if(!has_makefile(current_path))
+		{
+			cd(init_path);
+			current_path = init_path;
+		}
+	}
+
+	get_files();
+	extract_info();
+
 	long long makefile_data = modify_time("AutoMakefile");
 	for(auto it = sources.begin(); it != sources.end(); it++)
 	{
@@ -287,8 +288,11 @@ void AutoMaker::get_files(const string& path)
             {
             	if(strcmp(fileinfo.name, ".") != 0 &&
             	   strcmp(fileinfo.name, "..") != 0 &&
-            	   strcmp(fileinfo.name, "temp") != 0)
-                	get_files(p.assign(path).append("/").append(fileinfo.name));
+            	   strcmp(fileinfo.name, "temp") != 0 &&
+            	   fileinfo.name[0] != '.')
+            	{
+            		get_files(p.assign(path).append("/").append(fileinfo.name));
+            	}	
             }
             else
             {

@@ -36,6 +36,9 @@ class AutoMaker
 	string EXTERN_LIBS;
 	string RPATH;
 
+public:
+	bool here = false;
+
 private:
 	void get_files(const string& path);
 	void get_files();
@@ -44,7 +47,7 @@ private:
 	void generate();
 
 public:
-	AutoMaker();
+	AutoMaker(){};
 	void add_flag(const string& flag);
 	void set_flags(const string& flags);
 	void set_BinDir(const string& bindir);

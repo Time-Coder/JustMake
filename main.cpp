@@ -14,6 +14,11 @@ int main(int argc, char** argv)
 			continue;
 		}
 
+		if(arg == "here")
+		{
+			maker.here = true;
+		}
+
 		if(arg.substr(0, 8) == "DESTDIR=")
 		{
 			maker.set_BinDir(arg.substr(8, arg.size()-8));
