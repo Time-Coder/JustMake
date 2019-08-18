@@ -32,7 +32,7 @@ Let's see what's happening. Here is a little project with complex structure, fir
 │　├─ include  
 │　│　└─ sub.h  
 │　└─ lib  
-│　　　└─ libsub.dll
+│　　　└─ libsub.dll  
 └─ main.cpp
 <!-- .example
 |- main.cpp
