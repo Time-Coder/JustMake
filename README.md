@@ -28,12 +28,12 @@ Let's see what's happening. Here is a little project with complex structure, fir
 │　│　└─ add.h  
 │　└─ src  
 │　　　└─ add.cpp  
-└─ sub  
-　　├─ include  
-　　│　　└─ sub.h  
-　　└─ lib  
-　　　　└─ libsub.dll
-
+├─ sub  
+│　├─ include  
+│　│　└─ sub.h  
+│　└─ lib  
+│　　　└─ libsub.dll
+└─ main.cpp
 <!-- .example
 |- main.cpp
 |- add
