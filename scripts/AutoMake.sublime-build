@@ -1,0 +1,23 @@
+{
+    "encoding": "cp936",
+    "working_dir": "$file_path",
+    "file_regex": "^((?:.:)?[^:\\n\\r]*):([0-9]+):?([0-9]+)?:? (.*)$",
+    "shell_cmd": "D:/AutoMake/automake",
+    "variants":
+    [
+        {
+            "name": "run",
+            "shell_cmd": "D:/AutoMake/automake run"
+        },
+
+        {
+            "name": "clean",
+            "shell_cmd": "D:/AutoMake/automake clean",
+        },
+
+        {
+            "name": "generate",
+            "shell_cmd": "D:/AutoMake/automake generate"
+        }
+    ]
+}
