@@ -40,7 +40,10 @@ Let's see what's happening. Here is a little project with complex structure, fir
 ## Usage
 
 ### Command Parameters
-The command form is ``automake [options] [target]``.
+The command form is
+```
+automake [options] [target]
+```
 
 The ``[options]`` can be:
 * ``<with-no-arguments>``: Build your project and generate executable file.
@@ -62,10 +65,10 @@ Here I need to explain something: Why if you don't use ``here`` option, ``automa
 You can use above parameters to set automake options. You can also change them from "AutoMakefile". Execute
 ``automake generate`` to generate an "AutoMakefile", open it, And you can change these fields:
 ```
-CC = <specify your compiler> 
-FLAGS = <specify your compiler flags>
-LINK_FLAGS = <specify your link flags>
-BINDIR = <choose a dir to store .o and .exe>
+CC = <specify compiler> 
+FLAGS = <specify compiler flags>
+LINK_FLAGS = <specify link flags>
+BINDIR = <dir to store .o and .exe>
 
 EXTERN_INCLUDE = \
 -I<path1> \
@@ -79,7 +82,7 @@ EXTERN_LIBS = \
 -l<lib1> \
 -l<lib2> \
 ```
-Attention:
+Attention:  
 Don't bring the angle brace "<>" when you truly change this file.
 
 After you change, ``automake`` will remember your options and next time you call ``automake`` it will use these options.
@@ -87,4 +90,4 @@ After you change, ``automake`` will remember your options and next time you call
 ### Comment out your files
 If you don't want ``automake`` to compile some specific files, put them in a folder named "temp", or named begin with ".". You can also chang the file base name into "temp" to let ``automake`` ignore this file.
 
-Now go to your project folder and automake it!
+Go to your project folder and automake it!
