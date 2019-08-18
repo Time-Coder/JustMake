@@ -38,6 +38,11 @@ install: automake.exe
 	@echo         {>>scripts/AutoMake.sublime-build
 	@echo             "name": "generate",>>scripts/AutoMake.sublime-build
 	@echo             "shell_cmd": "$(DESTDIR)/automake generate">>scripts/AutoMake.sublime-build
+	@echo         },>>scripts/AutoMake.sublime-build
+	@echo.>>scripts/AutoMake.sublime-build
+	@echo         {>>scripts/AutoMake.sublime-build
+	@echo             "name": "here generate",>>scripts/AutoMake.sublime-build
+	@echo             "shell_cmd": "$(DESTDIR)/automake here generate">>scripts/AutoMake.sublime-build
 	@echo         }>>scripts/AutoMake.sublime-build
 	@echo     ]>>scripts/AutoMake.sublime-build
 	@echo }>>scripts/AutoMake.sublime-build

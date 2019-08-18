@@ -1,4 +1,4 @@
-#include <automake.h>
+#include "automake.h"
 
 string reverse_slash(string filename)
 {

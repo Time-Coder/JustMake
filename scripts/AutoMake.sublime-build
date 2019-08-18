@@ -18,6 +18,11 @@
         {
             "name": "generate",
             "shell_cmd": "D:/AutoMake/automake generate"
+        },
+
+        {
+            "name": "here generate",
+            "shell_cmd": "D:/AutoMake/automake here generate"
         }
     ]
 }

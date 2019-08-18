@@ -34,20 +34,8 @@ Let's see what's happening. Here is a little project with complex structure, fir
 │　└─ lib  
 │　　　└─ libsub.dll  
 └─ main.cpp
-<!-- .example
-|- main.cpp
-|- add
-|  |- include
-|  |  |- add.h
-|  |- src
-|  |  |- add.cpp
-|- sub
-|  |- include
-|  |  |- sub.h
-|  |- lib
-|  |  |- libsub.dll -->
 
-main.cpp includes add.h and sub.h, add.cpp include add.h, when linking, you need link to libsub.dll, when runing, you need ./sub/lib in your PATH. All of these dependents will be found out by AutoMake. You can see an AutoMakefile is generated under .example folder. You can see the content in AutoMakefile if you want.
+``main.cpp`` includes ``add.h`` and ``sub.h``, ``add.cpp`` include ``add.h``, when linking, you need link to ``libsub.dll``, when runing, you need ``./sub/lib`` in your PATH. All of these dependents will be found out by AutoMake. You can see an AutoMakefile is generated under ``.example`` folder. You can see the content in AutoMakefile if you want.
 
 ## Usage
 
