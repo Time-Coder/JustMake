@@ -1,11 +1,8 @@
-#include <io.h>
-#include <direct.h>
-#include <iostream>
-#include <fstream>
+#include "directory.h"
 #include <list>
-#include <windows.h>
 
 using namespace std;
+using namespace dir;
 
 struct Target
 {
@@ -16,6 +13,7 @@ struct Target
 	string lib_base;
 	string expand_name;
 	list<Target*> depends;
+	bool found = false;
 
 	Target(const string& _full_name);
 };
@@ -25,6 +23,7 @@ class AutoMaker
 	list<Target> sources;
 	list<Target> heads;
 	list<Target> libs;
+	list<Target> mains;
 	
 	string CC = "g++";
 	string FLAGS = "-std=c++11";
@@ -43,8 +42,9 @@ private:
 	void get_files(const string& path);
 	void get_files();
 	void extract_info();
-	void update_depends(Target& target);
-	void generate();
+	bool update_depends(Target& target);
+	void write_AutoMakefile();
+	void move_to_mains(const string& exes);
 
 public:
 	AutoMaker(){};
@@ -56,7 +56,5 @@ public:
 	void I(const string& includepath);
 	void make(const string& target = "");
 	void update();
+	void generate();
 };
-
-void cd(const string& path);
-string pwd();

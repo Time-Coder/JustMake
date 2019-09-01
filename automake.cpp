@@ -1,6 +1,6 @@
 #include "automake.h"
 
-string reverse_slash(string filename)
+string _reverse_slash(string filename)
 {
 	int n = filename.size();
 	for(int i = 0; i < n; i++)
@@ -12,26 +12,6 @@ string reverse_slash(string filename)
 	}
 
 	return filename;
-}
-
-void cd(const string& path)
-{
-	chdir(path.data());
-}
-
-string pwd()
-{
-	char path[1024];
-	getcwd(path, 1024);
-	return reverse_slash(string(path));
-}
-
-void mkdir(const string& dirname)
-{
-	if(0 != access(dirname.c_str(), 0))
-	{
-		mkdir(dirname.c_str());
-	}
 }
 
 bool has_file(const string& filename)
@@ -128,7 +108,7 @@ bool found(const list<string>& str_list, const string& str)
 
 Target::Target(const string& _full_name) : full_name(_full_name)
 {
-	reverse_slash(_full_name);
+	_reverse_slash(_full_name);
 
 	int slash = full_name.find_last_of('/');
 	path = full_name.substr(0, slash);
@@ -145,7 +125,7 @@ Target::Target(const string& _full_name) : full_name(_full_name)
 	}
 }
 
-void AutoMaker::generate()
+void AutoMaker::write_AutoMakefile()
 {
 	ofstream AutoMakefile("AutoMakefile");
 
@@ -196,6 +176,17 @@ void AutoMaker::generate()
 	}
 	AutoMakefile << endl;
 
+	for(auto it = mains.begin(); it != mains.end(); it++)
+	{
+		AutoMakefile << "DEPENDS_" << it->base_name << " = \\" << endl
+					 << it->full_name << " \\" << endl;
+		for(auto it_depends = it->depends.begin(); it_depends != it->depends.end(); it_depends++)
+		{
+			AutoMakefile << (*it_depends)->full_name << " \\" << endl;
+		}
+		AutoMakefile << endl;
+	}
+
 	for(auto it = sources.begin(); it != sources.end(); it++)
 	{
 		AutoMakefile << "DEPENDS_" << it->base_name << " = \\" << endl
@@ -212,12 +203,24 @@ void AutoMaker::generate()
 		AutoMakefile << "PATH := " << RPATH << "$(PATH)" << endl << endl;
 	}
 
-	string main_base = Target(pwd()).name;
-	string main = "$(BINDIR)/" + main_base + ".exe";
-	AutoMakefile << "all: " << main << endl << endl;
+	AutoMakefile << "all: ";
+	for(auto it = mains.begin(); it != mains.end(); it++)
+	{
+		AutoMakefile << "$(BINDIR)/" << it->base_name << ".exe ";
+	}
+	AutoMakefile << endl << endl;
 
-	AutoMakefile << main << ": $(OBJS)" << endl;
-	AutoMakefile << "\t$(CC) $(LINK_FLAGS) $(BINDIR)/*.o -o " << main << " $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)" << endl << endl;
+	for(auto it = mains.begin(); it != mains.end(); it++)
+	{
+		AutoMakefile << "$(BINDIR)/" << it->base_name << ".exe: $(BINDIR)/" << it->base_name << ".o $(OBJS)" << endl;
+		AutoMakefile << "\t$(CC) $(LINK_FLAGS) $(BINDIR)/" << it->base_name << ".o $(OBJS) -o $(BINDIR)/" << it->base_name << ".exe" << " $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)" << endl << endl;
+	}
+
+	for(auto it = mains.begin(); it != mains.end(); it++)
+	{
+		AutoMakefile << "$(BINDIR)/" << it->base_name << ".o: $(DEPENDS_" << it->base_name << ")" << endl;
+		AutoMakefile << "\t$(CC) $(FLAGS) $(INCLUDE) $(EXTERN_INCLUDE) -c " << it->full_name << " -o $(BINDIR)/" << it->base_name << ".o" << endl << endl;
+	}
 
 	for(auto it = sources.begin(); it != sources.end(); it++)
 	{
@@ -225,27 +228,92 @@ void AutoMaker::generate()
 		AutoMakefile << "\t$(CC) $(FLAGS) $(INCLUDE) $(EXTERN_INCLUDE) -c " << it->full_name << " -o $(BINDIR)/" << it->base_name << ".o" << endl << endl;
 	}
 
-	AutoMakefile << "run: " << main << endl;
-	AutoMakefile << "\t" << main << endl << endl;
+	AutoMakefile << "run: $(BINDIR)/" << mains.front().base_name << ".exe" << endl;
+	AutoMakefile << "\t" << mains.front().base_name << ".exe" << endl << endl;
 
+	for(auto it = mains.begin(); it != mains.end(); it++)
+	{
+		AutoMakefile << "run_" << it->base_name << ": $(BINDIR)/" << it->base_name << ".exe" << endl;
+		AutoMakefile << "\t" << it->base_name << ".exe" << endl << endl;
+	}
+	
 	AutoMakefile << "clean:" << endl;
-	AutoMakefile << "\tif exist $(BINDIR)\\*.o (del $(BINDIR)\\*.o)" << endl;
-	AutoMakefile << "\tif exist $(BINDIR)\\" << main_base << ".exe (del $(BINDIR)\\" << main_base << ".exe)" << endl;
+	AutoMakefile << "\trm -f $(BINDIR)/*.o" << endl;
+	for(auto it = mains.begin(); it != mains.end(); it++)
+	{
+		AutoMakefile << "\trm -f $(BINDIR)/" << it->base_name << ".exe" << endl;
+	}
+	AutoMakefile << endl;
+
+	AutoMakefile << "clear:" << endl;
+	AutoMakefile << "\trm -f $(BINDIR)/*.o" << endl;
 
 	AutoMakefile.close();
+
+	string dest_dir = "C:/Users/" + username() + "/AppData/Roaming/Sublime Text 3/Packages/User";
+	mkdir(dest_dir);
+	ofstream sublime_build(dest_dir + "/AutoMake.sublime-build");
+	sublime_build << "{" << endl;
+	sublime_build << "\t\"encoding\": \"cp936\"," << endl;
+	sublime_build << "\t\"selector\": \"source.cpp\"," << endl;
+	sublime_build << "\t\"working_dir\": \"$file_path\"," << endl;
+	sublime_build << "\t\"file_regex\": \"^((?:.:)?[^:\\n\\r]*):([0-9]+):?([0-9]+)?:? (.*)$\"," << endl;
+	sublime_build << "\t\"shell_cmd\": \"automake\"," << endl;
+	sublime_build << "\t\"variants\":" << endl;
+	sublime_build << "\t[" << endl;
+	sublime_build << "\t\t{" << endl;
+	sublime_build << "\t\t\t\"name\": \"generate\"," << endl;
+	sublime_build << "\t\t\t\"shell_cmd\": \"automake generate\"" << endl;
+	sublime_build << "\t\t}," << endl << endl;
+	sublime_build << "\t\t{" << endl;
+	sublime_build << "\t\t\t\"name\": \"update\"," << endl;
+	sublime_build << "\t\t\t\"shell_cmd\": \"automake update\"" << endl;
+	sublime_build << "\t\t}," << endl << endl;
+
+	for(auto it = mains.begin(); it != mains.end(); it++)
+	{
+		sublime_build << "\t\t{" << endl;
+		sublime_build << "\t\t\t\"name\": \"" << it->base_name << ".exe\"," << endl;
+		sublime_build << "\t\t\t\"shell_cmd\": \"automake " << BINDIR << "/" << it->base_name << ".exe\"" << endl;
+		sublime_build << "\t\t}," << endl << endl;
+	}
+
+	for(auto it = mains.begin(); it != mains.end(); it++)
+	{
+		sublime_build << "\t\t{" << endl;
+		sublime_build << "\t\t\t\"name\": \"run " << it->base_name << ".exe\"," << endl;
+		sublime_build << "\t\t\t\"shell_cmd\": \"automake run_" << it->base_name << "\"" << endl;
+		sublime_build << "\t\t}," << endl << endl;
+	}
+
+	sublime_build << "\t\t{" << endl;
+	sublime_build << "\t\t\t\"name\": \"clear\"," << endl;
+	sublime_build << "\t\t\t\"shell_cmd\": \"automake clear\"" << endl;
+	sublime_build << "\t\t}," << endl << endl;
+
+	sublime_build << "\t\t{" << endl;
+	sublime_build << "\t\t\t\"name\": \"clean\"," << endl;
+	sublime_build << "\t\t\t\"shell_cmd\": \"automake clean\"" << endl;
+	sublime_build << "\t\t}" << endl;
+
+	sublime_build << "\t]" << endl;
+	sublime_build << "}" << endl;
+	sublime_build.close();
 }
 
-void AutoMaker::update()
+void AutoMaker::generate()
 {
 	if(!here)
 	{
 		string init_path = pwd();
 		string current_path = init_path;
+		Target target(current_path);
 
-		while(!is_root(current_path) && !has_makefile(current_path))
+		while(target.name[0] != '.' && target.name != "temp" && !is_root(current_path) && !has_makefile(current_path))
 		{
 			cd("..");
 			current_path = pwd();
+			target = Target(current_path);
 		}
 
 		if(!has_makefile(current_path))
@@ -254,19 +322,94 @@ void AutoMaker::update()
 			current_path = init_path;
 		}
 	}
-
 	get_files();
 	extract_info();
-
+	
 	long long makefile_data = modify_time("AutoMakefile");
-	for(auto it = sources.begin(); it != sources.end(); it++)
+	for(auto it = sources.begin(); it != sources.end();)
 	{
-		if(modify_time(it->full_name) > makefile_data)
+		bool is_main = update_depends(*it);
+		if(is_main)
 		{
-			update_depends(*it);
+			mains.push_back(*it);
+			it = sources.erase(it);
+			continue;
+		}
+		it++;
+	}
+
+	for(auto it = mains.begin(); it != mains.end();)
+	{
+		bool is_main = update_depends(*it);
+		if(!is_main)
+		{
+			sources.push_back(*it);
+			it = mains.erase(it);
+			continue;
+		}
+		it++;
+	}
+
+	write_AutoMakefile();
+	mkdir(BINDIR);
+}
+
+void AutoMaker::update()
+{
+	if(!here)
+	{
+		string init_path = pwd();
+		string current_path = init_path;
+		Target target(current_path);
+
+		while(target.name[0] != '.' && target.name != "temp" && !is_root(current_path) && !has_makefile(current_path))
+		{
+			cd("..");
+			current_path = pwd();
+			target = Target(current_path);
+		}
+
+		if(!has_makefile(current_path))
+		{
+			cd(init_path);
+			current_path = init_path;
 		}
 	}
-	generate();
+	get_files();
+	extract_info();
+	
+	long long makefile_data = modify_time("AutoMakefile");
+	for(auto it = sources.begin(); it != sources.end();)
+	{
+		if(!(it->found) || modify_time(it->full_name) > makefile_data)
+		{
+			bool is_main = update_depends(*it);
+			if(is_main)
+			{
+				mains.push_back(*it);
+				it = sources.erase(it);
+				continue;
+			}
+		}
+		it++;
+	}
+
+	for(auto it = mains.begin(); it != mains.end();)
+	{
+		if(!(it->found) || modify_time(it->full_name) > makefile_data)
+		{
+			bool is_main = update_depends(*it);
+			if(!is_main)
+			{
+				sources.push_back(*it);
+				it = mains.erase(it);
+				continue;
+			}
+		}
+		it++;
+	}
+
+	write_AutoMakefile();
 	mkdir(BINDIR);
 }
 
@@ -303,7 +446,7 @@ void AutoMaker::get_files(const string& path)
             	}
             	if(target.expand_name == "c" || target.expand_name == "cpp")
             	{
-	                sources.push_back(target);
+            		sources.push_back(target);
 	            }
 	            else if(target.expand_name == "h" || target.expand_name == "hpp" || target.expand_name == "")
 	            {
@@ -324,6 +467,26 @@ void AutoMaker::get_files(const string& path)
 
         _findclose(hFile);
     }
+}
+
+void AutoMaker::move_to_mains(const string& exes)
+{
+	int i_name_start = 10;
+	int n = exes.size();
+	for(int i = i_name_start; i <= n; i++)
+	{
+		if(i == n || exes[i] == ' ')
+		{
+			auto it_source = find_name(sources, exes.substr(i_name_start, i-i_name_start-4) + ".cpp");
+			if(it_source != sources.end())
+			{
+				mains.push_back(*it_source);
+				sources.erase(it_source);
+			}
+			i += 10;
+			i_name_start = i + 1;
+		}
+	}
 }
 
 void AutoMaker::extract_info()
@@ -404,40 +567,48 @@ void AutoMaker::extract_info()
 		getline(AutoMakefile, line);
 		if(line.substr(0, 5) == "all: ")
 		{
+			move_to_mains(line.substr(5, line.size()-5));
 			break;
 		}
 		if(line.substr(0, 8) == "DEPENDS_")
 		{
 			getline(AutoMakefile, line);
 			string source_name = line.substr(0, line.size() - 2);
-			auto it_source = find_full_name(sources, source_name);
+			auto it_source = find_name(sources, Target(source_name).name);
 			if(it_source == sources.end())
 			{
 				continue;
 			}
+			it_source->found = true;
 			while(line != "")
 			{
 				getline(AutoMakefile, line);
 				string head_name = line.substr(0, line.size() - 2);
-				auto it_head = find_full_name(heads, head_name);
+				auto it_head = find_name(heads, Target(head_name).name);
 				if(it_head == heads.end())
 				{
 					continue;
 				}
+				it_head->found = true;
 				it_source->depends.push_back(&(*it_head));
 			}
 		}
 	}
 }
 
-void AutoMaker::update_depends(Target& target)
+bool AutoMaker::update_depends(Target& target)
 {
 	target.depends.clear();
 	ifstream file(target.full_name);
 	string line;
+	bool is_main = false;
 	while(getline(file, line))
 	{
 		delete_space(line);
+		if(line.substr(0, 8) == "intmain(" || line.substr(0, 9) == "voidmain(")
+		{
+			is_main = true;
+		}
 		if(line.substr(0, 8) == "#include")
 		{
 			string head_name = line.substr(9, line.size() - 10);
@@ -448,6 +619,8 @@ void AutoMaker::update_depends(Target& target)
 			}
 		}
 	}
+
+	return is_main;
 }
 
 void AutoMaker::make(const string& target)

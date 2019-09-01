@@ -4,19 +4,27 @@ int main(int argc, char** argv)
 {
 	AutoMaker maker;
 	string target = "";
-	bool dont_make = false;
+	bool generate = false;
+	bool update = false;
 	for(int i = 1; i < argc; i++)
 	{
 		string arg = string(argv[i]);
-		if(arg == "update" || arg == "generate")
+		if(arg == "update")
 		{
-			dont_make = true;
+			update = true;
+			continue;
+		}
+
+		if(arg == "generate")
+		{
+			generate = true;
 			continue;
 		}
 
 		if(arg == "here")
 		{
 			maker.here = true;
+			continue;
 		}
 
 		if(arg.substr(0, 8) == "DESTDIR=")
@@ -46,14 +54,19 @@ int main(int argc, char** argv)
 		}
 	}
 
-	if(dont_make)
+	if(generate)
+	{
+		maker.generate();
+		return 0;
+	}
+
+	if(update)
 	{
 		maker.update();
+		return 0;
 	}
-	else
-	{
-		maker.make(target);
-	}
+
+	maker.make(target);
 
 	return 0;
 }
