@@ -195,7 +195,11 @@ void JustMaker::write_Makefile()
 
 	if(!RPATH.empty())
 	{
-		Makefile << "PATH := " << RPATH << "$(PATH)" << endl << endl;
+		#ifdef __linux__
+			Makefile << "export LD_LIBRARY_PATH := " << RPATH << ":$(LD_LIBRARY_PATH)" << endl << endl;
+		#else
+			Makefile << "PATH := " << RPATH << "$(PATH)" << endl << endl;
+		#endif
 	}
 
 	Makefile << "all: ";
@@ -208,7 +212,7 @@ void JustMaker::write_Makefile()
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
 		Makefile << "$(EXEDIR)/" << it->base_name << ".exe: $(BINDIR)/" << it->base_name << ".o $(OBJS)" << endl;
-		Makefile << "\t$(CC) $(LINK_FLAGS) $(BINDIR)/" << it->base_name << ".o $(OBJS) -o $(EXEDIR)/" << it->base_name << ".exe" << " $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)" << endl << endl;
+		Makefile << "\t$(CC) $(LINK_FLAGS) -Wl,-rpath=" << RPATH << " $(BINDIR)/" << it->base_name << ".o $(OBJS) -o $(EXEDIR)/" << it->base_name << ".exe" << " $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)" << endl << endl;
 	}
 
 	for(auto it = mains.begin(); it != mains.end(); it++)
@@ -625,7 +629,11 @@ void JustMaker::read_Makefile()
 		while(line != "")
 		{
 			EXTERN_LIBPATH += (line + '\n');
-			RPATH += (line.substr(2, line.size()-2) + ';');
+			#ifdef __linux__
+				RPATH += (line.substr(2, line.size()-2) + ':');
+			#else
+				RPATH += (line.substr(2, line.size()-2) + ';');
+			#endif
 			getline(Makefile, line);
 		}
 	}
@@ -716,7 +724,11 @@ void JustMaker::I(const string& include_path)
 void JustMaker::L(const string& lib_path)
 {
 	EXTERN_LIBPATH += (lib_path + " \\\n");
-	RPATH += (lib_path.substr(2, lib_path.size()-2) + ";");
+	#ifdef __linux__
+		RPATH += (lib_path.substr(2, lib_path.size()-2) + ":");
+	#else
+		RPATH += (lib_path.substr(2, lib_path.size()-2) + ";");
+	#endif
 }
 
 void JustMaker::l(const string& lib_name)
