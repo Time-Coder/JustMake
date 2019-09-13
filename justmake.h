@@ -48,6 +48,8 @@ private:
 	bool update_depends(Target& target);
 	void write_Makefile();
 	void move_to_mains(const string& exes);
+	void write_JustMake_build(const string& dest_dir);
+	void write_JustMake_Interactive_build(const string& dest_dir);
 
 public:
 	JustMaker(){};

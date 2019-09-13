@@ -212,7 +212,14 @@ void JustMaker::write_Makefile()
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
 		Makefile << "$(EXEDIR)/" << it->base_name << ".exe: $(BINDIR)/" << it->base_name << ".o $(OBJS)" << endl;
-		Makefile << "\t$(CC) $(LINK_FLAGS) -Wl,-rpath=" << RPATH << " $(BINDIR)/" << it->base_name << ".o $(OBJS) -o $(EXEDIR)/" << it->base_name << ".exe" << " $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)" << endl << endl;
+		if(!RPATH.empty())
+		{
+			Makefile << "\t$(CC) $(LINK_FLAGS) -Wl,-rpath=" << RPATH << " $(BINDIR)/" << it->base_name << ".o $(OBJS) -o $(EXEDIR)/" << it->base_name << ".exe" << " $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)" << endl << endl;
+		}
+		else
+		{
+			Makefile << "\t$(CC) $(LINK_FLAGS)" << " $(BINDIR)/" << it->base_name << ".o $(OBJS) -o $(EXEDIR)/" << it->base_name << ".exe" << " $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)" << endl << endl;
+		}
 	}
 
 	for(auto it = mains.begin(); it != mains.end(); it++)
@@ -256,6 +263,66 @@ void JustMaker::write_Makefile()
 	#endif
 
 	mkdir(dest_dir);
+	write_JustMake_build(dest_dir);
+	write_JustMake_Interactive_build(dest_dir);
+}
+
+void JustMaker::write_JustMake_Interactive_build(const string& dest_dir)
+{
+	ofstream sublime_build(dest_dir + "/JustMake Interactive.sublime-build");
+	sublime_build << "{" << endl;
+	sublime_build << "\t\"working_dir\": \"$file_path\"," << endl;
+	sublime_build << "\t\"cmd\": [\"justmake\"]," << endl;
+	sublime_build << "\t\"variants\":" << endl;
+	sublime_build << "\t[" << endl;
+	sublime_build << "\t\t{" << endl;
+	sublime_build << "\t\t\t\"name\": \"generate\"," << endl;
+	sublime_build << "\t\t\t\"cmd\": [\"justmake\", \"generate\"]" << endl;
+	sublime_build << "\t\t}," << endl;
+	sublime_build << endl;
+	sublime_build << "\t\t{" << endl;
+	sublime_build << "\t\t\t\"name\": \"update\"," << endl;
+	sublime_build << "\t\t\t\"cmd\": [\"justmake\", \"update\"]" << endl;
+	sublime_build << "\t\t}," << endl << endl;
+
+	for(auto it = mains.begin(); it != mains.end(); it++)
+	{
+		sublime_build << "\t\t{" << endl;
+		sublime_build << "\t\t\t\"name\": \"" << it->base_name << ".exe\"," << endl;
+		sublime_build << "\t\t\t\"cmd\": [\"justmake\", \"" << EXEDIR << "/" << it->base_name << ".exe\"]" << endl;
+		sublime_build << "\t\t}," << endl << endl;
+	}
+
+	for(auto it = mains.begin(); it != mains.end(); it++)
+	{
+		sublime_build << "\t\t{" << endl;
+		sublime_build << "\t\t\t\"name\": \"run " << it->base_name << ".exe\"," << endl;
+		sublime_build << "\t\t\t\"target\": \"toggle_terminus_panel\"," << endl;
+		#ifdef __linux__
+			sublime_build << "\t\t\t\"cmd\": [\"bash\", \"-c\", \"justmake run_" << it->base_name << " && echo Press Enter to continue... && read line && exit\"]" << endl;
+		#else
+			sublime_build << "\t\t\t\"cmd\": [\"cmd\", \"/k\", \"justmake run_" << it->base_name << " && pause && exit\"]" << endl;
+		#endif
+		sublime_build << "\t\t}," << endl << endl;
+	}
+
+	sublime_build << "\t\t{" << endl;
+	sublime_build << "\t\t\t\"name\": \"clear\"," << endl;
+	sublime_build << "\t\t\t\"cmd\": [\"justmake\", \"clear\"]" << endl;
+	sublime_build << "\t\t}," << endl << endl;
+
+	sublime_build << "\t\t{" << endl;
+	sublime_build << "\t\t\t\"name\": \"clean\"," << endl;
+	sublime_build << "\t\t\t\"cmd\": [\"justmake\", \"clean\"]" << endl;
+	sublime_build << "\t\t}" << endl;
+
+	sublime_build << "\t]" << endl;
+	sublime_build << "}" << endl;
+	sublime_build.close();
+}
+
+void JustMaker::write_JustMake_build(const string& dest_dir)
+{
 	ofstream sublime_build(dest_dir + "/JustMake.sublime-build");
 	sublime_build << "{" << endl;
 	#ifdef __linux__
