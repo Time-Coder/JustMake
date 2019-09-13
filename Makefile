@@ -1,6 +1,6 @@
 all: justmake
 
-justmake: main.o justmake.o directory.o
+justmake.exe: main.o justmake.o directory.o
 	g++ *.o -o justmake
 
 main.o: main.cpp justmake.h
@@ -14,11 +14,11 @@ directory.o: directory.cpp directory.h
 
 clean:
 	rm -f *.o
-	rm -f justmake
+	rm -f justmake.exe
 	rm -f JustMakefile
 
 clear:
 	rm -f *.o
 
-install: justmake
-	cp justmake /usr/bin
+install: justmake.exe
+	cp justmake.exe E:/Qt/Tools/mingw530_32/bin

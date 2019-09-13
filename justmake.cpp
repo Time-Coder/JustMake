@@ -487,12 +487,10 @@ void JustMaker::get_files(string dirname)
         struct stat st;
         string name = dirname + string("/") + string(p->d_name);
         format(name);
+        stat(name.c_str(), &st);
         if(S_ISDIR(st.st_mode))
         {
-        	if(p->d_name[0] != '.' &&
-        	   strcmp(p->d_name, "..") != 0 &&
-        	   strcmp(p->d_name, "..") != 0 &&
-        	   strcmp(p->d_name, "temp") != 0)
+        	if(p->d_name[0] != '.' && strcmp(p->d_name, "temp") != 0)
         	{
             	get_files(name);
             }
