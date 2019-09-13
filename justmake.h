@@ -31,7 +31,8 @@ class JustMaker
 	string CC = "g++";
 	string FLAGS = "-std=c++11";
 	string LINK_FLAGS = "-std=c++11";
-	string BINDIR = ".";
+	string BINDIR = ".bin";
+	string EXEDIR = ".";
 
 	string EXTERN_INCLUDE;
 	string EXTERN_LIBPATH;
@@ -43,7 +44,7 @@ public:
 
 private:
 	void get_files(string path = ".");
-	void extract_info();
+	void read_Makefile();
 	bool update_depends(Target& target);
 	void write_Makefile();
 	void move_to_mains(const string& exes);

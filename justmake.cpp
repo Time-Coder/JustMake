@@ -49,17 +49,6 @@ long modify_time(const string& filename)
 	return buf.st_mtime;
 }
 
-// long long modify_time(const string& filename)
-// {
-//     FILETIME t_create, t_access, t_write;
-
-//     HANDLE hFile = CreateFile(filename.data(), 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-//     GetFileTime(hFile, &t_create, &t_access, &t_write);
-//     CloseHandle(hFile);
-
-//     return *((long long*)(&t_write));
-// }
-
 void delete_space(string& str)
 {
 	int n = str.size();
@@ -138,6 +127,7 @@ void JustMaker::write_Makefile()
 	Makefile << "FLAGS = " << FLAGS << endl;
 	Makefile << "LINK_FLAGS = " << LINK_FLAGS << endl;
 	Makefile << "BINDIR = " << BINDIR << endl << endl;
+	Makefile << "EXEDIR = " << EXEDIR << endl << endl;
 
 	Makefile << "EXTERN_INCLUDE = \\\n" << EXTERN_INCLUDE << endl;
 	Makefile << "EXTERN_LIBPATH = \\\n" << EXTERN_LIBPATH << endl;
@@ -211,23 +201,14 @@ void JustMaker::write_Makefile()
 	Makefile << "all: ";
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
-		#ifdef __linux__
-			Makefile << "$(BINDIR)/" << it->base_name << ' ';
-		#else
-			Makefile << "$(BINDIR)/" << it->base_name << ".exe ";
-		#endif
+		Makefile << "$(EXEDIR)/" << it->base_name << ".exe ";
 	}
 	Makefile << endl << endl;
 
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
-		#ifdef __linux__
-			Makefile << "$(BINDIR)/" << it->base_name << ": $(BINDIR)/" << it->base_name << ".o $(OBJS)" << endl;
-			Makefile << "\t$(CC) $(LINK_FLAGS) $(BINDIR)/" << it->base_name << ".o $(OBJS) -o $(BINDIR)/" << it->base_name << " $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)" << endl << endl;
-		#else
-			Makefile << "$(BINDIR)/" << it->base_name << ".exe: $(BINDIR)/" << it->base_name << ".o $(OBJS)" << endl;
-			Makefile << "\t$(CC) $(LINK_FLAGS) $(BINDIR)/" << it->base_name << ".o $(OBJS) -o $(BINDIR)/" << it->base_name << ".exe" << " $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)" << endl << endl;
-		#endif
+		Makefile << "$(EXEDIR)/" << it->base_name << ".exe: $(BINDIR)/" << it->base_name << ".o $(OBJS)" << endl;
+		Makefile << "\t$(CC) $(LINK_FLAGS) $(BINDIR)/" << it->base_name << ".o $(OBJS) -o $(EXEDIR)/" << it->base_name << ".exe" << " $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)" << endl << endl;
 	}
 
 	for(auto it = mains.begin(); it != mains.end(); it++)
@@ -242,34 +223,20 @@ void JustMaker::write_Makefile()
 		Makefile << "\t$(CC) $(FLAGS) $(INCLUDE) $(EXTERN_INCLUDE) -c " << it->full_name << " -o $(BINDIR)/" << it->base_name << ".o" << endl << endl;
 	}
 
-	#ifdef __linux__
-		Makefile << "run: $(BINDIR)/" << mains.front().base_name << endl;
-		Makefile << "\t" << "$(BINDIR)/" << mains.front().base_name << endl << endl;
-	#else
-		Makefile << "run: $(BINDIR)/" << mains.front().base_name << ".exe" << endl;
-		Makefile << "\t" << "$(BINDIR)/" << mains.front().base_name << ".exe" << endl << endl;
-	#endif
+	Makefile << "run: $(EXEDIR)/" << mains.front().base_name << ".exe" << endl;
+	Makefile << "\t" << "$(EXEDIR)/" << mains.front().base_name << ".exe" << endl << endl;
 
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
-		#ifdef __linux__
-			Makefile << "run_" << it->base_name << ": $(BINDIR)/" << it->base_name << endl;
-			Makefile << "\t" << "$(BINDIR)/" << it->base_name << endl << endl;
-		#else
-			Makefile << "run_" << it->base_name << ": $(BINDIR)/" << it->base_name << ".exe" << endl;
-			Makefile << "\t" << "$(BINDIR)/" << it->base_name << ".exe" << endl << endl;
-		#endif
+		Makefile << "run_" << it->base_name << ": $(EXEDIR)/" << it->base_name << ".exe" << endl;
+		Makefile << "\t" << "$(EXEDIR)/" << it->base_name << ".exe" << endl << endl;
 	}
 	
 	Makefile << "clean:" << endl;
 	Makefile << "\trm -f $(BINDIR)/*.o" << endl;
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
-		#ifdef __linux__
-			Makefile << "\trm -f $(BINDIR)/" << it->base_name << endl;
-		#else
-			Makefile << "\trm -f $(BINDIR)/" << it->base_name << ".exe" << endl;
-		#endif
+		Makefile << "\trm -f $(EXEDIR)/" << it->base_name << ".exe" << endl;
 	}
 	Makefile << endl;
 
@@ -288,9 +255,9 @@ void JustMaker::write_Makefile()
 	ofstream sublime_build(dest_dir + "/JustMake.sublime-build");
 	sublime_build << "{" << endl;
 	#ifdef __linux__
-		sublime_build << "\t\"encoding\": \"cp936\"," << endl;
-	#else
 		sublime_build << "\t\"encoding\": \"utf-8\"," << endl;
+	#else
+		sublime_build << "\t\"encoding\": \"cp936\"," << endl;
 	#endif
 	sublime_build << "\t\"selector\": \"source.c.cpp\"," << endl;
 	sublime_build << "\t\"working_dir\": \"$file_path\"," << endl;
@@ -310,24 +277,15 @@ void JustMaker::write_Makefile()
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
 		sublime_build << "\t\t{" << endl;
-		#ifdef __linux__
-			sublime_build << "\t\t\t\"name\": \"" << it->base_name << "\"," << endl;
-			sublime_build << "\t\t\t\"shell_cmd\": \"justmake " << BINDIR << "/" << it->base_name << "\"" << endl;
-		#else
-			sublime_build << "\t\t\t\"name\": \"" << it->base_name << ".exe\"," << endl;
-			sublime_build << "\t\t\t\"shell_cmd\": \"justmake " << BINDIR << "/" << it->base_name << ".exe\"" << endl;
-		#endif
+		sublime_build << "\t\t\t\"name\": \"" << it->base_name << ".exe\"," << endl;
+		sublime_build << "\t\t\t\"shell_cmd\": \"justmake " << EXEDIR << "/" << it->base_name << ".exe\"" << endl;
 		sublime_build << "\t\t}," << endl << endl;
 	}
 
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
 		sublime_build << "\t\t{" << endl;
-		#ifdef __linux__
-			sublime_build << "\t\t\t\"name\": \"run " << it->base_name << "\"," << endl;
-		#else
-			sublime_build << "\t\t\t\"name\": \"run " << it->base_name << ".exe\"," << endl;
-		#endif
+		sublime_build << "\t\t\t\"name\": \"run " << it->base_name << ".exe\"," << endl;
 		sublime_build << "\t\t\t\"shell_cmd\": \"justmake run_" << it->base_name << "\"" << endl;
 		sublime_build << "\t\t}," << endl << endl;
 	}
@@ -369,7 +327,7 @@ void JustMaker::generate()
 		}
 	}
 	get_files();
-	extract_info();
+	read_Makefile();
 	
 	long makefile_data = modify_time(".Makefile");
 	for(auto it = sources.begin(); it != sources.end();)
@@ -422,7 +380,7 @@ void JustMaker::update()
 		}
 	}
 	get_files();
-	extract_info();
+	read_Makefile();
 	
 
 	long makefile_data = modify_time(".Makefile");
@@ -587,16 +545,10 @@ void JustMaker::move_to_mains(const string& exes)
 	{
 		if(i == n || exes[i] == ' ')
 		{
-			#ifdef __linux__
-				int offset = 0;
-			#else
-				int offset = 4;
-			#endif
-
-			auto it_source = find_name(sources, exes.substr(i_name_start, i-i_name_start-offset) + ".cpp");
+			auto it_source = find_name(sources, exes.substr(i_name_start, i-i_name_start-4) + ".cpp");
 			if(it_source == sources.end())
 			{
-				it_source = find_name(sources, exes.substr(i_name_start, i-i_name_start-offset) + ".c");
+				it_source = find_name(sources, exes.substr(i_name_start, i-i_name_start-4) + ".c");
 			}
 			if(it_source != sources.end())
 			{
@@ -609,7 +561,7 @@ void JustMaker::move_to_mains(const string& exes)
 	}
 }
 
-void JustMaker::extract_info()
+void JustMaker::read_Makefile()
 {
 	if(!dir::is_file(".Makefile"))
 	{
@@ -646,6 +598,13 @@ void JustMaker::extract_info()
 		return;
 	}
 	BINDIR = line.substr(9, line.size() - 9);
+
+	getline(Makefile, line);
+	if(line.substr(0, 9) != "EXEDIR = ")
+	{
+		return;
+	}
+	EXEDIR = line.substr(9, line.size() - 9);
 
 	getline(Makefile, line);
 	getline(Makefile, line);
