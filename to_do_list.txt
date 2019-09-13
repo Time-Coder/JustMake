@@ -1,16 +1,16 @@
-将主函数文件名设为可执行文件名 Done
-支持多个主函数 Done
-支持移动和重命名 Done
-当文件夹名称包含 . 或为 temp 时停止向上 Done
+将主函数文件名设为可执行文件名 --Done
+支持多个主函数 --Done
+支持移动和重命名 --Done
+当文件夹名称包含 . 或为 temp 时停止向上 --Done
 多层依赖
 行注释
 段注释
-linux 系统和 windows 系统自行判断
+linux 系统和 windows 系统自行判断 --Done
 依赖库位数与编译器位数自行判断
-每次 update 更新 sublime 对应项 Done
-当参数只有 here 时，不应报错 Done
-更新 generate
-clean Done
-clear Done
-gdb
-sublimegdb
+每次 update 更新 sublime 对应项 --Done
+当参数只有 here 时，不应报错 --Done
+更新 generate --Done
+clean --Done
+clear --Done
+clean for windows --Done
+clear for windows --Do
