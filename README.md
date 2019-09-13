@@ -1,4 +1,4 @@
-# AutoMake - Automatically build your C++ project
+# JustMake - Automatically build your C++ project
 
 ## Why AutoMake?
 If you are using IDE, you cannot change anything without your IDE: you can't move a cpp file to another folder, you cannot new a head file in a folder you choose, you can't copy a library into your project folder then directly using it.
