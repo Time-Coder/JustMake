@@ -1,8 +1,8 @@
-#include "automake.h"
+#include "justmake.h"
 
 int main(int argc, char** argv)
 {
-	AutoMaker maker;
+	JustMaker maker;
 	string target = "";
 	bool generate = false;
 	bool update = false;

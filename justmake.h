@@ -18,7 +18,7 @@ struct Target
 	Target(const string& _full_name);
 };
 
-class AutoMaker
+class JustMaker
 {
 	list<Target> sources;
 	list<Target> heads;
@@ -43,11 +43,11 @@ private:
 	void get_files();
 	void extract_info();
 	bool update_depends(Target& target);
-	void write_AutoMakefile();
+	void write_JustMakefile();
 	void move_to_mains(const string& exes);
 
 public:
-	AutoMaker(){};
+	JustMaker(){};
 	void add_flag(const string& flag);
 	void set_flags(const string& flags);
 	void set_BinDir(const string& bindir);

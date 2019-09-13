@@ -1,4 +1,4 @@
-#include "automake.h"
+#include "justmake.h"
 
 string _reverse_slash(string filename)
 {
@@ -14,20 +14,9 @@ string _reverse_slash(string filename)
 	return filename;
 }
 
-bool has_file(const string& filename)
-{
-	ifstream ifile(filename.data());
-	return ifile.good();
-}
-
-bool has_dir(const string& dirname)
-{
-	return (_access(dirname.c_str(), 0) != -1);
-}
-
 bool has_makefile(const string& path)
 {
-	return has_file("Makefile") || has_file("makefile") || has_file("AutoMakefile");
+	return dir::is_file("Makefile") || dir::is_file("makefile") || dir::is_file("JustMakefile");
 }
 
 bool is_root(const string& path)
@@ -125,156 +114,156 @@ Target::Target(const string& _full_name) : full_name(_full_name)
 	}
 }
 
-void AutoMaker::write_AutoMakefile()
+void JustMaker::write_JustMakefile()
 {
-	ofstream AutoMakefile("AutoMakefile");
+	ofstream JustMakefile("JustMakefile");
 
-	AutoMakefile << "CC = " << CC << endl;
-	AutoMakefile << "FLAGS = " << FLAGS << endl;
-	AutoMakefile << "LINK_FLAGS = " << LINK_FLAGS << endl;
-	AutoMakefile << "BINDIR = " << BINDIR << endl << endl;
+	JustMakefile << "CC = " << CC << endl;
+	JustMakefile << "FLAGS = " << FLAGS << endl;
+	JustMakefile << "LINK_FLAGS = " << LINK_FLAGS << endl;
+	JustMakefile << "BINDIR = " << BINDIR << endl << endl;
 
-	AutoMakefile << "EXTERN_INCLUDE = \\\n" << EXTERN_INCLUDE << endl;
-	AutoMakefile << "EXTERN_LIBPATH = \\\n" << EXTERN_LIBPATH << endl;
-	AutoMakefile << "EXTERN_LIBS = \\\n" << EXTERN_LIBS << endl;
+	JustMakefile << "EXTERN_INCLUDE = \\\n" << EXTERN_INCLUDE << endl;
+	JustMakefile << "EXTERN_LIBPATH = \\\n" << EXTERN_LIBPATH << endl;
+	JustMakefile << "EXTERN_LIBS = \\\n" << EXTERN_LIBS << endl;
 
 	string last_path = "";
-	AutoMakefile << "INCLUDE = \\" << endl;
+	JustMakefile << "INCLUDE = \\" << endl;
 	for(auto it = heads.begin(); it != heads.end(); it++)
 	{
 		if(it->path != last_path)
 		{
-			AutoMakefile << "-I" << it->path << " \\" << endl;
+			JustMakefile << "-I" << it->path << " \\" << endl;
 		}
 		last_path = it->path;
 	}
-	AutoMakefile << endl;
+	JustMakefile << endl;
 
 	last_path = "";
-	AutoMakefile << "LIBPATH = \\" << endl;
+	JustMakefile << "LIBPATH = \\" << endl;
 	for(auto it = libs.begin(); it != libs.end(); it++)
 	{
 		if(it->path != last_path)
 		{
-			AutoMakefile << "-L" << it->path << " \\" << endl;
+			JustMakefile << "-L" << it->path << " \\" << endl;
 		}
 		last_path = it->path;
 	}
-	AutoMakefile << endl;
+	JustMakefile << endl;
 
-	AutoMakefile << "LIBS = \\" << endl;
+	JustMakefile << "LIBS = \\" << endl;
 	for(auto it = libs.begin(); it != libs.end(); it++)
 	{
-		AutoMakefile << "-l" << it->lib_base << " \\" << endl;
+		JustMakefile << "-l" << it->lib_base << " \\" << endl;
 	}
-	AutoMakefile << endl;
+	JustMakefile << endl;
 
-	AutoMakefile << "OBJS = \\" << endl;
+	JustMakefile << "OBJS = \\" << endl;
 	for(auto it = sources.begin(); it != sources.end(); it++)
 	{
-		AutoMakefile << "$(BINDIR)/" << it->base_name << ".o \\" << endl;
+		JustMakefile << "$(BINDIR)/" << it->base_name << ".o \\" << endl;
 	}
-	AutoMakefile << endl;
+	JustMakefile << endl;
 
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
-		AutoMakefile << "DEPENDS_" << it->base_name << " = \\" << endl
+		JustMakefile << "DEPENDS_" << it->base_name << " = \\" << endl
 					 << it->full_name << " \\" << endl;
 		for(auto it_depends = it->depends.begin(); it_depends != it->depends.end(); it_depends++)
 		{
-			AutoMakefile << (*it_depends)->full_name << " \\" << endl;
+			JustMakefile << (*it_depends)->full_name << " \\" << endl;
 		}
-		AutoMakefile << endl;
+		JustMakefile << endl;
 	}
 
 	for(auto it = sources.begin(); it != sources.end(); it++)
 	{
-		AutoMakefile << "DEPENDS_" << it->base_name << " = \\" << endl
+		JustMakefile << "DEPENDS_" << it->base_name << " = \\" << endl
 					 << it->full_name << " \\" << endl;
 		for(auto it_depends = it->depends.begin(); it_depends != it->depends.end(); it_depends++)
 		{
-			AutoMakefile << (*it_depends)->full_name << " \\" << endl;
+			JustMakefile << (*it_depends)->full_name << " \\" << endl;
 		}
-		AutoMakefile << endl;
+		JustMakefile << endl;
 	}
 
 	if(!RPATH.empty())
 	{
-		AutoMakefile << "PATH := " << RPATH << "$(PATH)" << endl << endl;
+		JustMakefile << "PATH := " << RPATH << "$(PATH)" << endl << endl;
 	}
 
-	AutoMakefile << "all: ";
+	JustMakefile << "all: ";
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
-		AutoMakefile << "$(BINDIR)/" << it->base_name << ".exe ";
+		JustMakefile << "$(BINDIR)/" << it->base_name << ".exe ";
 	}
-	AutoMakefile << endl << endl;
-
-	for(auto it = mains.begin(); it != mains.end(); it++)
-	{
-		AutoMakefile << "$(BINDIR)/" << it->base_name << ".exe: $(BINDIR)/" << it->base_name << ".o $(OBJS)" << endl;
-		AutoMakefile << "\t$(CC) $(LINK_FLAGS) $(BINDIR)/" << it->base_name << ".o $(OBJS) -o $(BINDIR)/" << it->base_name << ".exe" << " $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)" << endl << endl;
-	}
+	JustMakefile << endl << endl;
 
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
-		AutoMakefile << "$(BINDIR)/" << it->base_name << ".o: $(DEPENDS_" << it->base_name << ")" << endl;
-		AutoMakefile << "\t$(CC) $(FLAGS) $(INCLUDE) $(EXTERN_INCLUDE) -c " << it->full_name << " -o $(BINDIR)/" << it->base_name << ".o" << endl << endl;
+		JustMakefile << "$(BINDIR)/" << it->base_name << ".exe: $(BINDIR)/" << it->base_name << ".o $(OBJS)" << endl;
+		JustMakefile << "\t$(CC) $(LINK_FLAGS) $(BINDIR)/" << it->base_name << ".o $(OBJS) -o $(BINDIR)/" << it->base_name << ".exe" << " $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)" << endl << endl;
+	}
+
+	for(auto it = mains.begin(); it != mains.end(); it++)
+	{
+		JustMakefile << "$(BINDIR)/" << it->base_name << ".o: $(DEPENDS_" << it->base_name << ")" << endl;
+		JustMakefile << "\t$(CC) $(FLAGS) $(INCLUDE) $(EXTERN_INCLUDE) -c " << it->full_name << " -o $(BINDIR)/" << it->base_name << ".o" << endl << endl;
 	}
 
 	for(auto it = sources.begin(); it != sources.end(); it++)
 	{
-		AutoMakefile << "$(BINDIR)/" << it->base_name << ".o: $(DEPENDS_" << it->base_name << ")" << endl;
-		AutoMakefile << "\t$(CC) $(FLAGS) $(INCLUDE) $(EXTERN_INCLUDE) -c " << it->full_name << " -o $(BINDIR)/" << it->base_name << ".o" << endl << endl;
+		JustMakefile << "$(BINDIR)/" << it->base_name << ".o: $(DEPENDS_" << it->base_name << ")" << endl;
+		JustMakefile << "\t$(CC) $(FLAGS) $(INCLUDE) $(EXTERN_INCLUDE) -c " << it->full_name << " -o $(BINDIR)/" << it->base_name << ".o" << endl << endl;
 	}
 
-	AutoMakefile << "run: $(BINDIR)/" << mains.front().base_name << ".exe" << endl;
-	AutoMakefile << "\t" << mains.front().base_name << ".exe" << endl << endl;
+	JustMakefile << "run: $(BINDIR)/" << mains.front().base_name << ".exe" << endl;
+	JustMakefile << "\t" << mains.front().base_name << ".exe" << endl << endl;
 
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
-		AutoMakefile << "run_" << it->base_name << ": $(BINDIR)/" << it->base_name << ".exe" << endl;
-		AutoMakefile << "\t" << it->base_name << ".exe" << endl << endl;
+		JustMakefile << "run_" << it->base_name << ": $(BINDIR)/" << it->base_name << ".exe" << endl;
+		JustMakefile << "\t" << it->base_name << ".exe" << endl << endl;
 	}
 	
-	AutoMakefile << "clean:" << endl;
-	AutoMakefile << "\trm -f $(BINDIR)/*.o" << endl;
+	JustMakefile << "clean:" << endl;
+	JustMakefile << "\trm -f $(BINDIR)/*.o" << endl;
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
-		AutoMakefile << "\trm -f $(BINDIR)/" << it->base_name << ".exe" << endl;
+		JustMakefile << "\trm -f $(BINDIR)/" << it->base_name << ".exe" << endl;
 	}
-	AutoMakefile << endl;
+	JustMakefile << endl;
 
-	AutoMakefile << "clear:" << endl;
-	AutoMakefile << "\trm -f $(BINDIR)/*.o" << endl;
+	JustMakefile << "clear:" << endl;
+	JustMakefile << "\trm -f $(BINDIR)/*.o" << endl;
 
-	AutoMakefile.close();
+	JustMakefile.close();
 
 	string dest_dir = "C:/Users/" + username() + "/AppData/Roaming/Sublime Text 3/Packages/User";
 	mkdir(dest_dir);
-	ofstream sublime_build(dest_dir + "/AutoMake.sublime-build");
+	ofstream sublime_build(dest_dir + "/JustMake.sublime-build");
 	sublime_build << "{" << endl;
 	sublime_build << "\t\"encoding\": \"cp936\"," << endl;
-	sublime_build << "\t\"selector\": \"source.cpp\"," << endl;
+	sublime_build << "\t\"selector\": \"source.c.cpp\"," << endl;
 	sublime_build << "\t\"working_dir\": \"$file_path\"," << endl;
 	sublime_build << "\t\"file_regex\": \"^((?:.:)?[^:\\n\\r]*):([0-9]+):?([0-9]+)?:? (.*)$\"," << endl;
-	sublime_build << "\t\"shell_cmd\": \"automake\"," << endl;
+	sublime_build << "\t\"shell_cmd\": \"justmake\"," << endl;
 	sublime_build << "\t\"variants\":" << endl;
 	sublime_build << "\t[" << endl;
 	sublime_build << "\t\t{" << endl;
 	sublime_build << "\t\t\t\"name\": \"generate\"," << endl;
-	sublime_build << "\t\t\t\"shell_cmd\": \"automake generate\"" << endl;
+	sublime_build << "\t\t\t\"shell_cmd\": \"justmake generate\"" << endl;
 	sublime_build << "\t\t}," << endl << endl;
 	sublime_build << "\t\t{" << endl;
 	sublime_build << "\t\t\t\"name\": \"update\"," << endl;
-	sublime_build << "\t\t\t\"shell_cmd\": \"automake update\"" << endl;
+	sublime_build << "\t\t\t\"shell_cmd\": \"justmake update\"" << endl;
 	sublime_build << "\t\t}," << endl << endl;
 
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
 		sublime_build << "\t\t{" << endl;
 		sublime_build << "\t\t\t\"name\": \"" << it->base_name << ".exe\"," << endl;
-		sublime_build << "\t\t\t\"shell_cmd\": \"automake " << BINDIR << "/" << it->base_name << ".exe\"" << endl;
+		sublime_build << "\t\t\t\"shell_cmd\": \"justmake " << BINDIR << "/" << it->base_name << ".exe\"" << endl;
 		sublime_build << "\t\t}," << endl << endl;
 	}
 
@@ -282,18 +271,18 @@ void AutoMaker::write_AutoMakefile()
 	{
 		sublime_build << "\t\t{" << endl;
 		sublime_build << "\t\t\t\"name\": \"run " << it->base_name << ".exe\"," << endl;
-		sublime_build << "\t\t\t\"shell_cmd\": \"automake run_" << it->base_name << "\"" << endl;
+		sublime_build << "\t\t\t\"shell_cmd\": \"justmake run_" << it->base_name << "\"" << endl;
 		sublime_build << "\t\t}," << endl << endl;
 	}
 
 	sublime_build << "\t\t{" << endl;
 	sublime_build << "\t\t\t\"name\": \"clear\"," << endl;
-	sublime_build << "\t\t\t\"shell_cmd\": \"automake clear\"" << endl;
+	sublime_build << "\t\t\t\"shell_cmd\": \"justmake clear\"" << endl;
 	sublime_build << "\t\t}," << endl << endl;
 
 	sublime_build << "\t\t{" << endl;
 	sublime_build << "\t\t\t\"name\": \"clean\"," << endl;
-	sublime_build << "\t\t\t\"shell_cmd\": \"automake clean\"" << endl;
+	sublime_build << "\t\t\t\"shell_cmd\": \"justmake clean\"" << endl;
 	sublime_build << "\t\t}" << endl;
 
 	sublime_build << "\t]" << endl;
@@ -301,7 +290,7 @@ void AutoMaker::write_AutoMakefile()
 	sublime_build.close();
 }
 
-void AutoMaker::generate()
+void JustMaker::generate()
 {
 	if(!here)
 	{
@@ -325,7 +314,7 @@ void AutoMaker::generate()
 	get_files();
 	extract_info();
 	
-	long long makefile_data = modify_time("AutoMakefile");
+	long long makefile_data = modify_time("JustMakefile");
 	for(auto it = sources.begin(); it != sources.end();)
 	{
 		bool is_main = update_depends(*it);
@@ -350,11 +339,11 @@ void AutoMaker::generate()
 		it++;
 	}
 
-	write_AutoMakefile();
+	write_JustMakefile();
 	mkdir(BINDIR);
 }
 
-void AutoMaker::update()
+void JustMaker::update()
 {
 	if(!here)
 	{
@@ -378,7 +367,7 @@ void AutoMaker::update()
 	get_files();
 	extract_info();
 	
-	long long makefile_data = modify_time("AutoMakefile");
+	long long makefile_data = modify_time("JustMakefile");
 	for(auto it = sources.begin(); it != sources.end();)
 	{
 		if(!(it->found) || modify_time(it->full_name) > makefile_data)
@@ -409,16 +398,16 @@ void AutoMaker::update()
 		it++;
 	}
 
-	write_AutoMakefile();
+	write_JustMakefile();
 	mkdir(BINDIR);
 }
 
-void AutoMaker::get_files()
+void JustMaker::get_files()
 {
 	get_files(".");
 }
 
-void AutoMaker::get_files(const string& path)
+void JustMaker::get_files(const string& path)
 {
     long hFile = 0;  
     struct _finddata_t fileinfo;  
@@ -469,7 +458,7 @@ void AutoMaker::get_files(const string& path)
     }
 }
 
-void AutoMaker::move_to_mains(const string& exes)
+void JustMaker::move_to_mains(const string& exes)
 {
 	int i_name_start = 10;
 	int n = exes.size();
@@ -478,6 +467,10 @@ void AutoMaker::move_to_mains(const string& exes)
 		if(i == n || exes[i] == ' ')
 		{
 			auto it_source = find_name(sources, exes.substr(i_name_start, i-i_name_start-4) + ".cpp");
+			if(it_source == sources.end())
+			{
+				it_source = find_name(sources, exes.substr(i_name_start, i-i_name_start-4) + ".c");
+			}
 			if(it_source != sources.end())
 			{
 				mains.push_back(*it_source);
@@ -489,82 +482,82 @@ void AutoMaker::move_to_mains(const string& exes)
 	}
 }
 
-void AutoMaker::extract_info()
+void JustMaker::extract_info()
 {
-	if(!has_file("AutoMakefile"))
+	if(!dir::is_file("JustMakefile"))
 	{
 		return;
 	}
 	
-	ifstream AutoMakefile("AutoMakefile");
+	ifstream JustMakefile("JustMakefile");
 	string line;
 
-	getline(AutoMakefile, line);
+	getline(JustMakefile, line);
 	if(line.substr(0, 5) != "CC = ")
 	{
 		return;
 	}
 	CC = line.substr(5, line.size() - 5);
 
-	getline(AutoMakefile, line);
+	getline(JustMakefile, line);
 	if(line.substr(0, 8) != "FLAGS = ")
 	{
 		return;
 	}
 	FLAGS = line.substr(8, line.size() - 8);
 
-	getline(AutoMakefile, line);
+	getline(JustMakefile, line);
 	if(line.substr(0, 13) != "LINK_FLAGS = ")
 	{
 		return;
 	}
 	LINK_FLAGS = line.substr(13, line.size() - 13);
 
-	getline(AutoMakefile, line);
+	getline(JustMakefile, line);
 	if(line.substr(0, 9) != "BINDIR = ")
 	{
 		return;
 	}
 	BINDIR = line.substr(9, line.size() - 9);
 
-	getline(AutoMakefile, line);
-	getline(AutoMakefile, line);
+	getline(JustMakefile, line);
+	getline(JustMakefile, line);
 	if(line.substr(0, 18) == "EXTERN_INCLUDE = \\")
 	{
-		getline(AutoMakefile, line);
+		getline(JustMakefile, line);
 		while(line != "")
 		{
 			EXTERN_INCLUDE += (line + '\n');
-			getline(AutoMakefile, line);
+			getline(JustMakefile, line);
 		}
 	}
 
-	getline(AutoMakefile, line);
+	getline(JustMakefile, line);
 	if(line.substr(0, 18) == "EXTERN_LIBPATH = \\")
 	{
-		getline(AutoMakefile, line);
+		getline(JustMakefile, line);
 		while(line != "")
 		{
 			EXTERN_LIBPATH += (line + '\n');
 			RPATH += (line.substr(2, line.size()-2) + ';');
-			getline(AutoMakefile, line);
+			getline(JustMakefile, line);
 		}
 	}
 
-	getline(AutoMakefile, line);
+	getline(JustMakefile, line);
 	if(line.substr(0, 18) == "EXTERN_LIBS = \\")
 	{
-		getline(AutoMakefile, line);
+		getline(JustMakefile, line);
 		while(line != "")
 		{
 			EXTERN_LIBS += (line + '\n');
-			getline(AutoMakefile, line);
+			getline(JustMakefile, line);
 		}
 	}
 	
 	while(true)
 	{
-		getline(AutoMakefile, line);
+		getline(JustMakefile, line);
 		if(line.substr(0, 5) == "all: ")
 		{
 			move_to_mains(line.substr(5, line.size()-5));
@@ -572,7 +565,7 @@ void AutoMaker::extract_info()
 		}
 		if(line.substr(0, 8) == "DEPENDS_")
 		{
-			getline(AutoMakefile, line);
+			getline(JustMakefile, line);
 			string source_name = line.substr(0, line.size() - 2);
 			auto it_source = find_name(sources, Target(source_name).name);
 			if(it_source == sources.end())
@@ -582,7 +575,7 @@ void AutoMaker::extract_info()
 			it_source->found = true;
 			while(line != "")
 			{
-				getline(AutoMakefile, line);
+				getline(JustMakefile, line);
 				string head_name = line.substr(0, line.size() - 2);
 				auto it_head = find_name(heads, Target(head_name).name);
 				if(it_head == heads.end())
@@ -596,7 +589,7 @@ void AutoMaker::extract_info()
 	}
 }
 
-bool AutoMaker::update_depends(Target& target)
+bool JustMaker::update_depends(Target& target)
 {
 	target.depends.clear();
 	ifstream file(target.full_name);
@@ -623,34 +616,34 @@ bool AutoMaker::update_depends(Target& target)
 	return is_main;
 }
 
-void AutoMaker::make(const string& target)
+void JustMaker::make(const string& target)
 {
 	update();
-	system((string("make -f AutoMakefile ") + target).data());
+	system((string("make -f JustMakefile ") + target).data());
 }
 
-void AutoMaker::I(const string& include_path)
+void JustMaker::I(const string& include_path)
 {
 	EXTERN_INCLUDE += (include_path + " \\\n");
 }
 
-void AutoMaker::L(const string& lib_path)
+void JustMaker::L(const string& lib_path)
 {
 	EXTERN_LIBPATH += (lib_path + " \\\n");
 	RPATH += (lib_path.substr(2, lib_path.size()-2) + ";");
 }
 
-void AutoMaker::l(const string& lib_name)
+void JustMaker::l(const string& lib_name)
 {
 	EXTERN_LIBS += (lib_name + " \\\n");
 }
 
-void AutoMaker::add_flag(const string& flag)
+void JustMaker::add_flag(const string& flag)
 {
 	FLAGS += (string(" ") + flag);
 }
 
-void AutoMaker::set_BinDir(const string& bindir)
+void JustMaker::set_BinDir(const string& bindir)
 {
 	BINDIR = bindir;
 }

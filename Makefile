@@ -1,18 +1,18 @@
-all: automake.exe
+all: justmake.exe
 
-automake.exe: main.o automake.o directory.o
-	g++ *.o -o automake.exe
+justmake.exe: main.o justmake.o directory.o
+	g++ *.o -o justmake.exe
 
-main.o: main.cpp automake.h
+main.o: main.cpp justmake.h
 	g++ -std=c++11 -c main.cpp
 
-automake.o: automake.cpp automake.h
-	g++ -std=c++11 -c automake.cpp
+justmake.o: justmake.cpp justmake.h
+	g++ -std=c++11 -c justmake.cpp
 
 directory.o: directory.cpp directory.h
 	g++ -std=c++11 -c directory.cpp
 
 clean:
 	rm -f *.o
-	rm -f automake.exe
-	rm -f AutoMakefile
+	rm -f justmake.exe
+	rm -f JustMakefile
