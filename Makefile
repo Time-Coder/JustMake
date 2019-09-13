@@ -16,3 +16,6 @@ clean:
 	rm -f *.o
 	rm -f justmake.exe
 	rm -f JustMakefile
+
+install: justmake.exe
+	cp justmake.exe E:/Qt/Tools/mingw530_32/bin

@@ -195,14 +195,23 @@ void JustMaker::write_JustMakefile()
 	JustMakefile << "all: ";
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
-		JustMakefile << "$(BINDIR)/" << it->base_name << ".exe ";
+		#ifdef __linux__
+			JustMakefile << "$(BINDIR)/" << it->base_name << ' ';
+		#else
+			JustMakefile << "$(BINDIR)/" << it->base_name << ".exe ";
+		#endif
 	}
 	JustMakefile << endl << endl;
 
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
-		JustMakefile << "$(BINDIR)/" << it->base_name << ".exe: $(BINDIR)/" << it->base_name << ".o $(OBJS)" << endl;
-		JustMakefile << "\t$(CC) $(LINK_FLAGS) $(BINDIR)/" << it->base_name << ".o $(OBJS) -o $(BINDIR)/" << it->base_name << ".exe" << " $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)" << endl << endl;
+		#ifdef __linux__
+			JustMakefile << "$(BINDIR)/" << it->base_name << ": $(BINDIR)/" << it->base_name << ".o $(OBJS)" << endl;
+			JustMakefile << "\t$(CC) $(LINK_FLAGS) $(BINDIR)/" << it->base_name << ".o $(OBJS) -o $(BINDIR)/" << it->base_name << " $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)" << endl << endl;
+		#else
+			JustMakefile << "$(BINDIR)/" << it->base_name << ".exe: $(BINDIR)/" << it->base_name << ".o $(OBJS)" << endl;
+			JustMakefile << "\t$(CC) $(LINK_FLAGS) $(BINDIR)/" << it->base_name << ".o $(OBJS) -o $(BINDIR)/" << it->base_name << ".exe" << " $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)" << endl << endl;
+		#endif
 	}
 
 	for(auto it = mains.begin(); it != mains.end(); it++)
@@ -217,20 +226,34 @@ void JustMaker::write_JustMakefile()
 		JustMakefile << "\t$(CC) $(FLAGS) $(INCLUDE) $(EXTERN_INCLUDE) -c " << it->full_name << " -o $(BINDIR)/" << it->base_name << ".o" << endl << endl;
 	}
 
-	JustMakefile << "run: $(BINDIR)/" << mains.front().base_name << ".exe" << endl;
-	JustMakefile << "\t" << mains.front().base_name << ".exe" << endl << endl;
+	#ifdef __linux__
+		JustMakefile << "run: $(BINDIR)/" << mains.front().base_name << endl;
+		JustMakefile << "\t" << mains.front().base_name << endl << endl;
+	#else
+		JustMakefile << "run: $(BINDIR)/" << mains.front().base_name << ".exe" << endl;
+		JustMakefile << "\t" << mains.front().base_name << ".exe" << endl << endl;
+	#endif
 
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
-		JustMakefile << "run_" << it->base_name << ": $(BINDIR)/" << it->base_name << ".exe" << endl;
-		JustMakefile << "\t" << it->base_name << ".exe" << endl << endl;
+		#ifdef __linux__
+			JustMakefile << "run_" << it->base_name << ": $(BINDIR)/" << it->base_name << endl;
+			JustMakefile << "\t" << it->base_name << endl << endl;
+		#else
+			JustMakefile << "run_" << it->base_name << ": $(BINDIR)/" << it->base_name << ".exe" << endl;
+			JustMakefile << "\t" << it->base_name << ".exe" << endl << endl;
+		#endif
 	}
 	
 	JustMakefile << "clean:" << endl;
 	JustMakefile << "\trm -f $(BINDIR)/*.o" << endl;
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
-		JustMakefile << "\trm -f $(BINDIR)/" << it->base_name << ".exe" << endl;
+		#ifdef __linux__
+			JustMakefile << "\trm -f $(BINDIR)/" << it->base_name << endl;
+		#else
+			JustMakefile << "\trm -f $(BINDIR)/" << it->base_name << ".exe" << endl;
+		#endif
 	}
 	JustMakefile << endl;
 
@@ -243,7 +266,11 @@ void JustMaker::write_JustMakefile()
 	mkdir(dest_dir);
 	ofstream sublime_build(dest_dir + "/JustMake.sublime-build");
 	sublime_build << "{" << endl;
-	sublime_build << "\t\"encoding\": \"cp936\"," << endl;
+	#ifdef __linux__
+		sublime_build << "\t\"encoding\": \"cp936\"," << endl;
+	#else
+		sublime_build << "\t\"encoding\": \"utf-8\"," << endl;
+	#endif
 	sublime_build << "\t\"selector\": \"source.c.cpp\"," << endl;
 	sublime_build << "\t\"working_dir\": \"$file_path\"," << endl;
 	sublime_build << "\t\"file_regex\": \"^((?:.:)?[^:\\n\\r]*):([0-9]+):?([0-9]+)?:? (.*)$\"," << endl;
@@ -262,15 +289,24 @@ void JustMaker::write_JustMakefile()
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
 		sublime_build << "\t\t{" << endl;
-		sublime_build << "\t\t\t\"name\": \"" << it->base_name << ".exe\"," << endl;
-		sublime_build << "\t\t\t\"shell_cmd\": \"justmake " << BINDIR << "/" << it->base_name << ".exe\"" << endl;
+		#ifdef __linux__
+			sublime_build << "\t\t\t\"name\": \"" << it->base_name << "\"," << endl;
+			sublime_build << "\t\t\t\"shell_cmd\": \"justmake " << BINDIR << "/" << it->base_name << "\"" << endl;
+		#else
+			sublime_build << "\t\t\t\"name\": \"" << it->base_name << ".exe\"," << endl;
+			sublime_build << "\t\t\t\"shell_cmd\": \"justmake " << BINDIR << "/" << it->base_name << ".exe\"" << endl;
+		#endif
 		sublime_build << "\t\t}," << endl << endl;
 	}
 
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
 		sublime_build << "\t\t{" << endl;
-		sublime_build << "\t\t\t\"name\": \"run " << it->base_name << ".exe\"," << endl;
+		#ifdef __linux__
+			sublime_build << "\t\t\t\"name\": \"run " << it->base_name << "\"," << endl;
+		#else
+			sublime_build << "\t\t\t\"name\": \"run " << it->base_name << ".exe\"," << endl;
+		#endif
 		sublime_build << "\t\t\t\"shell_cmd\": \"justmake run_" << it->base_name << "\"" << endl;
 		sublime_build << "\t\t}," << endl << endl;
 	}
@@ -466,10 +502,16 @@ void JustMaker::move_to_mains(const string& exes)
 	{
 		if(i == n || exes[i] == ' ')
 		{
-			auto it_source = find_name(sources, exes.substr(i_name_start, i-i_name_start-4) + ".cpp");
+			#ifdef __linux__
+				int offset = 0;
+			#else
+				int offset = 4;
+			#endif
+
+			auto it_source = find_name(sources, exes.substr(i_name_start, i-i_name_start-offset) + ".cpp");
 			if(it_source == sources.end())
 			{
-				it_source = find_name(sources, exes.substr(i_name_start, i-i_name_start-4) + ".c");
+				it_source = find_name(sources, exes.substr(i_name_start, i-i_name_start-offset) + ".c");
 			}
 			if(it_source != sources.end())
 			{

@@ -1,31 +1,44 @@
-#include <io.h>
-#include <direct.h>
-#include <iostream>
-#include <fstream>
-#include <windows.h>
-#include <sys/stat.h>
-#include <cstdio>
+#ifndef DIRECTORY_H
+#define DIRECTORY_H
 
-#include <stack>
-#include <list>
-#include <vector>
+#include <iostream>
+#include <cstdio>
+#include <fstream>
 #include <string>
+#include <vector>
+#include <list>
+#include <stack>
+
+#include <dirent.h>
+#include <sys/stat.h>
+
+#ifdef __linux__
+	#include <unistd.h>
+	#include <pwd.h>
+#else
+	#include <windows.h>
+#endif
 
 using namespace std;
 
 namespace dir
 {
-	int cd(const string& dir_name); // done
-	string pwd(); // done
-	string username();
-	vector<string> ls(const string& dir_name = "."); // done
-	int touch(const string& file_name);
-	int mkdir(const string& dir_name); // done
-	int rm(const string& target_name); // done
-	int cp(string src_name, string dest_name); // done
-	int mv(string src_name, string dest_name); // done
+	void format(string& filename);
 
-	bool is_file(const string& filename); // done
-	bool is_dir(const string& dirname); // done
-	bool exist(const string& name); // done
+	int cd(string dir_name);
+	string pwd();
+	string username();
+	vector<string> ls(string dir_name = ".");
+	int touch(string file_name);
+	int mkdir(string dir_name);
+	int rm(string target_name);
+	int cp(string src_name, string dest_name);
+	int mv(string src_name, string dest_name);
+	int rename(string src_name, string dest_name);
+
+	bool is_file(string filename);
+	bool is_dir(string dirname);
+	bool exist(string name);
 }
+
+#endif

@@ -1,49 +1,70 @@
 #include "directory.h"
 
-string __reverse_slash(string filename)
+void dir::format(string& filename)
 {
-	int n = filename.size();
-	for(int i = 0; i < n; i++)
+	for(auto it = filename.begin(); it != filename.end();)
 	{
-		if(filename[i] == '\\')
+		if(*it == '\\')
 		{
-			filename[i] = '/';
+			*it = '/';
+		}
+
+		if(it != filename.begin() && *(it-1) == '/' && *it == '/')
+		{
+			it = filename.erase(it);
+		}
+		else
+		{
+			it++;
 		}
 	}
-
-	return filename;
+	if(filename[0] != '.' && filename[0] != '/' && filename[1] != ':')
+	{
+		filename = string("./") + filename;
+	}
 }
 
-vector<string> dir::ls(const string& dirname)
+vector<string> dir::ls(string dirname)
 {
-	vector<string> files;
-	if(!is_dir(dirname))
+	dir::format(dirname);
+	if(dirname[dirname.size()-1] == '/')
 	{
-		return files;
+		dirname.erase(dirname.size()-1, 1);
 	}
 
-	long hFile = 0;
-	struct _finddata_t fileinfo;
-	string p;
+    vector<string> filenames;
 
-	if((hFile = _findfirst(p.assign(dirname).append("/*").c_str(),&fileinfo)) != -1)
-	{
-		do
-		{
-			if(strcmp(fileinfo.name,".") != 0 && strcmp(fileinfo.name,"..") != 0)
-			{
-				files.push_back(p.assign(dirname).append("/").append(fileinfo.name));
-			}
-		}
-		while(_findnext(hFile, &fileinfo)  == 0);
-		_findclose(hFile);
-	}
+    struct stat s;
+    stat(dirname.c_str(), &s);
+    if(!S_ISDIR(s.st_mode))
+    {
+        return filenames;
+    }
 
-	return files;
+    DIR* open_dir = opendir(dirname.c_str());
+    if(NULL == open_dir)
+    {
+        exit(EXIT_FAILURE);
+    }
+    dirent* p = nullptr;
+    while( (p = readdir(open_dir)) != nullptr)
+    {
+        struct stat st;
+        if(p->d_name[0] != '.')
+        {
+        	if(dirname != ".")
+            	filenames.push_back(dirname + "/" + string(p->d_name));
+            else
+            	filenames.push_back(string(p->d_name));
+        }
+    }
+    closedir(open_dir);
+    return filenames;
 }
 
-int dir::cd(const string& dir_name)
+int dir::cd(string dir_name)
 {
+	dir::format(dir_name);
 	return chdir(dir_name.data());
 }
 
@@ -51,38 +72,62 @@ string dir::pwd()
 {
 	char path[1024];
 	getcwd(path, 1024);
-	return __reverse_slash(string(path));
+	string str_path = string(path);
+	format(str_path);
+
+	return str_path;
 }
 
-string dir::username()
+std::string dir::username()
 {
-	char strBuffer[256] = {0};
-	DWORD dwSize = 256;
-	GetUserName(strBuffer, &dwSize);
-
-	return string(strBuffer);
+#ifdef __linux__
+    uid_t userid;
+    struct passwd* pwd;
+    userid = getuid();
+    pwd = getpwuid(userid);
+    return pwd->pw_name;
+#else
+    DWORD len = 128;
+    char szBuffer[len];
+    GetUserName(szBuffer, &len);
+    return szBuffer;
+#endif
 }
 
-bool dir::is_file(const string& file_name)
+bool dir::is_file(string filename)
 {
+	dir::format(filename);
+	if(filename[filename.size()-1] == '/')
+	{
+		return false;
+	}
+
 	struct stat s;
-	return (stat(file_name.c_str(), &s) == 0 && (s.st_mode & S_IFREG));
+	return (stat(filename.c_str(), &s) == 0 && (s.st_mode & S_IFREG));
 }
 
-bool dir::is_dir(const string& dir_name)
+bool dir::is_dir(string dirname)
 {
+	dir::format(dirname);
 	struct stat s;
-	return (stat(dir_name.c_str(), &s) == 0 && (s.st_mode & S_IFDIR));
+	return (stat(dirname.c_str(), &s) == 0 && (s.st_mode & S_IFDIR));
 }
 
-bool dir::exist(const string& name)
+bool dir::exist(string name)
 {
+	dir::format(name);
 	struct stat s;
 	return (stat(name.c_str(), &s) == 0);
 }
 
-int dir::mkdir(const string& dirname)
+int dir::mkdir(string dirname)
 {
+	dir::format(dirname);
+	if(dirname[dirname.size()-1] == '/')
+	{
+		dirname.erase(dirname.size()-1, 1);
+	}
+
 	stack<string> S;
 	int n = dirname.size();
 	int i = n;
@@ -114,18 +159,28 @@ int dir::mkdir(const string& dirname)
 
 	while(!S.empty())
 	{
-		if(0 != _mkdir(S.top().c_str()))
+		int flag;
+		#ifdef __linux__
+			flag = ::mkdir(S.top().c_str(), 0755);
+		#else
+			flag = ::mkdir(S.top().c_str());
+		#endif
+
+		if(flag != 0)
 		{
 			return -1;
 		}
+
 		S.pop();
 	}
 
 	return 0;
 }
 
-int dir::rm(const string &name)
+int dir::rm(string name)
 {
+	dir::format(name);
+
 	if(is_file(name))
 	{
 		return remove(name.c_str());
@@ -146,7 +201,7 @@ int dir::rm(const string &name)
 
 string only_name(const string& filename)
 {
-	int name_begin = filename.find_last_of("/\\") + 1;
+	int name_begin = filename.find_last_of("/") + 1;
 	if(name_begin == filename.npos)
 	{
 		return filename;
@@ -160,7 +215,9 @@ string only_name(const string& filename)
 
 string only_path(const string& full_name)
 {
-	return full_name.substr(0, full_name.find_last_of("/\\"));
+	string path_name = full_name.substr(0, full_name.find_last_of("/\\"));
+
+	return path_name;
 }
 
 int copy_file_to_dir(const string& filename, const string& dir_name)
@@ -173,7 +230,7 @@ int copy_file_to_dir(const string& filename, const string& dir_name)
 	{
 		return 1;
 	}
-
+	
 	ifstream ifile(filename.c_str(), ios::binary);
 	ofstream ofile((dir_name + "/" + only_name(filename)).c_str(), ios::binary);
 	ofile << ifile.rdbuf();
@@ -218,20 +275,19 @@ int in_str(const string& target, char pattern)
 
 int dir::cp(string src, string dest)
 {
-	if(!exist(src))
+	format(src);
+	format(dest);
+
+	if(!exist(src) || is_file(dest))
 	{
 		return -1;
 	}
-
-	if(is_file(dest))
+	if(dest == src)
 	{
 		return 1;
 	}
 
-	src = __reverse_slash(src);
-	dest = __reverse_slash(dest);
-
-	while(src[src.size()-1] == '/')
+	if(src[src.size()-1] == '/')
 	{
 		src.erase(src.end()-1);
 	}
@@ -243,7 +299,7 @@ int dir::cp(string src, string dest)
 		{
 			return copy_file_to_dir(src, dest);
 		}
-		else if(is_dir(dest.substr(0, dest.find_last_of("/"))) && !is_dir(dest) || in_str(name, '.') > 0)
+		else if(is_dir(only_path(dest)) && !is_dir(dest) || in_str(name, '.') > 0)
 		{
 			return copy_file_to_file(src, dest);
 		}
@@ -254,14 +310,18 @@ int dir::cp(string src, string dest)
 	}
 	else
 	{
+		if(exist(dest))
+		{
+			dest = dest + "/" + only_name(src);
+		}
 		vector<string> files = ls(src);
-		if(-1 == mkdir(dest + "/" + only_name(src)))
+		if(-1 == mkdir(dest))
 		{
 			return -1;
 		}
 		for(auto it = files.begin(); it != files.end(); it++)
 		{
-			cp(*it, dest + "/" + only_name(src));
+			cp(*it, dest);
 		}
 	}
 
@@ -270,8 +330,56 @@ int dir::cp(string src, string dest)
 
 int dir::mv(string src, string dest)
 {
-	bool flag = cp(src, dest);
+	format(src);
+	format(dest);
+	if(src == dest)
+	{
+		return 1;
+	}
+
+	int flag = cp(src, dest);
 	rm(src);
 
 	return flag;
+}
+
+int dir::rename(string src, string dest)
+{
+	format(src);
+	if(src[src.size()-1] == '/')
+	{
+		src.erase(src.size()-1, 1);
+	}
+
+	if(only_name(src) == dest)
+	{
+		return 1;
+	}
+
+	if(!exist(src) || in_str(dest, '/') != -1 || exist(only_path(src) + "/" + dest))
+	{
+		return -1;
+	}
+
+	return ::rename(src.c_str(), (only_path(src) + "/" + dest).c_str());
+}
+
+int dir::touch(string filename)
+{
+	format(filename);
+	if(is_file(filename))
+	{
+		return 1;
+	}
+	if(is_dir(filename))
+	{
+		return -1;
+	}
+	if(-1 == mkdir(only_path(filename)))
+	{
+		return -1;
+	}
+	ofstream ofile(filename, ios::binary);
+	ofile.close();
+	return 0;
 }
