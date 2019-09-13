@@ -32,12 +32,14 @@ int main(int argc, char** argv)
 		if(arg == "clean")
 		{
 			clean = true;
+			target = clean;
 			continue;
 		}
 
 		if(arg == "clear")
 		{
 			clear = true;
+			target = clear;
 			continue;
 		}
 
