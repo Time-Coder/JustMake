@@ -55,13 +55,16 @@ public:
 	JustMaker(){};
 	void add_flag(const string& flag);
 	void set_flags(const string& flags);
-	void set_BinDir(const string& bindir);
+	void set_BINDIR(const string& bindir);
+	void set_EXEDIR(const string& bindir);
 	void L(const string& libpath);
 	void l(const string& libfile);
 	void I(const string& includepath);
 	void make(const string& target = "");
 	void update();
 	void generate();
+	void clean();
+	void clear();
 };
 
 #endif

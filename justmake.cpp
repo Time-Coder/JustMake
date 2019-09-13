@@ -427,6 +427,7 @@ void JustMaker::generate()
 
 	write_Makefile();
 	mkdir(BINDIR);
+	mkdir(EXEDIR);
 }
 
 void JustMaker::update()
@@ -511,6 +512,13 @@ void JustMaker::get_files(string dirname)
         exit(EXIT_FAILURE);
     }
     dirent* p = nullptr;
+
+    #ifdef __linux__
+    	string dynamic_lib_type = "so";
+    #else
+    	string dynamic_lib_type = "dll";
+    #endif
+
     while( (p = readdir(open_dir)) != nullptr)
     {
         struct stat st;
@@ -539,7 +547,7 @@ void JustMaker::get_files(string dirname)
             {
             	heads.push_back(target);
             }
-            else if(target.expand_name == "dll" || target.expand_name == "so")
+            else if(target.expand_name == dynamic_lib_type)
             {
             	libs.push_back(target);
             	#ifdef __linux__
@@ -556,57 +564,6 @@ void JustMaker::get_files(string dirname)
     }
     closedir(open_dir);
 }
-
-// void JustMaker::get_files(const string& path)
-// {
-//     long hFile = 0;
-//     struct _finddata_t fileinfo;
-//     string p;
-//     if((hFile = _findfirst(p.assign(path).append("/*").c_str(), &fileinfo)) != -1)
-//     {
-//         do
-//         {
-//             if(fileinfo.attrib & _A_SUBDIR)
-//             {
-//             	if(strcmp(fileinfo.name, ".") != 0 &&
-//             	   strcmp(fileinfo.name, "..") != 0 &&
-//             	   strcmp(fileinfo.name, "temp") != 0 &&
-//             	   fileinfo.name[0] != '.')
-//             	{
-//             		get_files(p.assign(path).append("/").append(fileinfo.name));
-//             	}
-//             }
-//             else
-//             {
-//             	Target target = Target(p.assign(path).append("/").append(fileinfo.name));
-//             	if(target.base_name == "temp")
-//             	{
-//             		continue;
-//             	}
-//             	if(target.expand_name == "c" || target.expand_name == "cpp")
-//             	{
-//             		sources.push_back(target);
-// 	            }
-// 	            else if(target.expand_name == "h" || target.expand_name == "hpp" || target.expand_name == "")
-// 	            {
-// 	            	heads.push_back(target);
-// 	            }
-// 	            else if(target.expand_name == "dll" || target.expand_name == "so")
-// 	            {
-// 	            	libs.push_back(target);
-// 	            	RPATH += (target.path + ';');
-// 	            }
-// 	            else if(target.expand_name == "lib" || target.expand_name == "a")
-// 	            {
-// 	            	libs.push_back(target);
-// 	            }
-//             }
-//         }
-//         while(_findnext(hFile, &fileinfo) == 0);
-
-//         _findclose(hFile);
-//     }
-// }
 
 void JustMaker::move_to_mains(const string& exes)
 {
@@ -808,7 +765,47 @@ void JustMaker::add_flag(const string& flag)
 	FLAGS += (string(" ") + flag);
 }
 
-void JustMaker::set_BinDir(const string& bindir)
+void JustMaker::set_BINDIR(const string& bindir)
 {
 	BINDIR = bindir;
+}
+
+void JustMaker::set_EXEDIR(const string& exedir)
+{
+	EXEDIR = exedir;
+}
+
+void JustMaker::clean()
+{
+	cout << "rm -f " << BINDIR << "/*.o" << endl;
+	auto bins = ls(BINDIR);
+	for(auto it = bins.begin(); it != bins.end(); it++)
+	{
+		if(it->substr(it->size()-2, 2) == ".o")
+		{
+			rm(*it);
+		}
+	}
+	auto exes = ls(EXEDIR);
+	for(auto it = exes.begin(); it != exes.end(); it++)
+	{
+		if(it->size() > 4 && it->substr(it->size()-4, 4) == ".exe")
+		{
+			cout << "rm -f " << *it << endl;
+			rm(*it);
+		}
+	}
+}
+
+void JustMaker::clear()
+{
+	cout << "rm -f " << BINDIR << "/*.o" << endl;
+	auto bins = ls(BINDIR);
+	for(auto it = bins.begin(); it != bins.end(); it++)
+	{
+		if(it->size() > 2 && it->substr(it->size()-2, 2) == ".o")
+		{
+			rm(*it);
+		}
+	}
 }

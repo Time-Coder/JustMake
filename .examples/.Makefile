@@ -16,7 +16,7 @@ INCLUDE = \
 -I./sub/include \
 
 LIBPATH = \
--L./add/src \
+-L./add/lib \
 -L./sub/lib \
 
 LIBS = \
@@ -34,15 +34,15 @@ DEPENDS_main1 = \
 ./add/include/add.h \
 ./sub/include/sub.h \
 
-PATH := ./add/src;./sub/lib;$(PATH)
+PATH := ./add/lib;./sub/lib;$(PATH)
 
 all: $(EXEDIR)/main.exe $(EXEDIR)/main1.exe 
 
 $(EXEDIR)/main.exe: $(BINDIR)/main.o $(OBJS)
-	$(CC) $(LINK_FLAGS) -Wl,-rpath=./add/src;./sub/lib; $(BINDIR)/main.o $(OBJS) -o $(EXEDIR)/main.exe $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)
+	$(CC) $(LINK_FLAGS) -Wl,-rpath=./add/lib;./sub/lib; $(BINDIR)/main.o $(OBJS) -o $(EXEDIR)/main.exe $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)
 
 $(EXEDIR)/main1.exe: $(BINDIR)/main1.o $(OBJS)
-	$(CC) $(LINK_FLAGS) -Wl,-rpath=./add/src;./sub/lib; $(BINDIR)/main1.o $(OBJS) -o $(EXEDIR)/main1.exe $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)
+	$(CC) $(LINK_FLAGS) -Wl,-rpath=./add/lib;./sub/lib; $(BINDIR)/main1.o $(OBJS) -o $(EXEDIR)/main1.exe $(LIBPATH) $(EXTERN_LIBPATH) $(LIBS) $(EXTERN_LIBS)
 
 $(BINDIR)/main.o: $(DEPENDS_main)
 	$(CC) $(FLAGS) $(INCLUDE) $(EXTERN_INCLUDE) -c ./main.cpp -o $(BINDIR)/main.o

@@ -6,6 +6,8 @@ int main(int argc, char** argv)
 	string target = "";
 	bool generate = false;
 	bool update = false;
+	bool clean = false;
+	bool clear = false;
 	for(int i = 1; i < argc; i++)
 	{
 		string arg = string(argv[i]);
@@ -27,14 +29,26 @@ int main(int argc, char** argv)
 			continue;
 		}
 
-		if(arg.substr(0, 8) == "DESTDIR=")
+		if(arg == "clean")
 		{
-			maker.set_BinDir(arg.substr(8, arg.size()-8));
+			clean = true;
+			continue;
+		}
+
+		if(arg == "clear")
+		{
+			clear = true;
+			continue;
+		}
+
+		if(arg.substr(0, 8) == "EXEDIR=")
+		{
+			maker.set_EXEDIR(arg.substr(8, arg.size()-8));
 			continue;
 		}
 		if(arg.substr(0, 7) == "BINDIR=")
 		{
-			maker.set_BinDir(arg.substr(7, arg.size()-7));
+			maker.set_BINDIR(arg.substr(7, arg.size()-7));
 			continue;
 		}
 
@@ -53,6 +67,20 @@ int main(int argc, char** argv)
 			target = arg;
 		}
 	}
+
+	#ifndef __linux__
+		if(clean)
+		{
+			maker.clean();
+			return 0;
+		}
+
+		if(clear)
+		{
+			maker.clear();
+			return 0;
+		}
+	#endif
 
 	if(generate)
 	{
