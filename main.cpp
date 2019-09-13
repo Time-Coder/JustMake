@@ -65,7 +65,6 @@ int main(int argc, char** argv)
 		maker.update();
 		return 0;
 	}
-
 	maker.make(target);
 
 	return 0;

@@ -1,5 +1,8 @@
+#ifndef JUSTMAKE_H
+#define JUSTMAKE_H
+
 #include "directory.h"
-#include <list>
+#include <cstring>
 
 using namespace std;
 using namespace dir;
@@ -39,11 +42,10 @@ public:
 	bool here = false;
 
 private:
-	void get_files(const string& path);
-	void get_files();
+	void get_files(string path = ".");
 	void extract_info();
 	bool update_depends(Target& target);
-	void write_JustMakefile();
+	void write_Makefile();
 	void move_to_mains(const string& exes);
 
 public:
@@ -58,3 +60,5 @@ public:
 	void update();
 	void generate();
 };
+
+#endif
