@@ -383,3 +383,33 @@ int dir::touch(string filename)
 	ofile.close();
 	return 0;
 }
+
+string dir::abs_path(const string& filename)
+{
+	string init_path = dir::pwd();
+	if(!dir::is_dir(filename))
+	{
+		dir::cd(only_path(filename));
+	}
+	else
+	{
+		dir::cd(filename);
+	}
+
+	string result = dir::pwd();
+	dir::cd(init_path);
+
+	return result;
+}
+
+string dir::abs_name(const string& filename)
+{
+	if(!dir::is_dir(filename))
+	{
+		return dir::abs_path(filename) + "/" + only_name(filename);
+	}
+	else
+	{
+		return dir::abs_path(filename);
+	}
+}

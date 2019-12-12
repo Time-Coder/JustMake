@@ -112,21 +112,29 @@ Target::Target(const string& _full_name) : full_name(_full_name)
 	base_name = name.substr(0, point);
 	expand_name = name.substr(point + 1, name.size() - point - 1);
 
-	int lib = base_name.find_first_of("lib");
-	if(lib == 0)
+	if(base_name.find_first_of("lib") == 0)
 	{
 		lib_base = base_name.substr(3, base_name.size() - 3);
+	}
+	else
+	{
+		lib_base = base_name;
 	}
 }
 
 void JustMaker::write_Makefile()
 {
+	if(RPATH[RPATH.size()-1] == ':' || RPATH[RPATH.size()-1] == ';')
+	{
+		RPATH.erase(RPATH.size()-1);
+	}
+
 	ofstream Makefile(".Makefile");
 
 	Makefile << "CC = " << CC << endl;
 	Makefile << "FLAGS = " << FLAGS << endl;
 	Makefile << "LINK_FLAGS = " << LINK_FLAGS << endl;
-	Makefile << "BINDIR = " << BINDIR << endl << endl;
+	Makefile << "BINDIR = " << BINDIR << endl;
 	Makefile << "EXEDIR = " << EXEDIR << endl << endl;
 
 	Makefile << "EXTERN_INCLUDE = \\\n" << EXTERN_INCLUDE << endl;
@@ -174,7 +182,7 @@ void JustMaker::write_Makefile()
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
 		Makefile << "DEPENDS_" << it->base_name << " = \\" << endl
-					 << it->full_name << " \\" << endl;
+				 << it->full_name << " \\" << endl;
 		for(auto it_depends = it->depends.begin(); it_depends != it->depends.end(); it_depends++)
 		{
 			Makefile << (*it_depends)->full_name << " \\" << endl;
@@ -185,7 +193,7 @@ void JustMaker::write_Makefile()
 	for(auto it = sources.begin(); it != sources.end(); it++)
 	{
 		Makefile << "DEPENDS_" << it->base_name << " = \\" << endl
-					 << it->full_name << " \\" << endl;
+				 << it->full_name << " \\" << endl;
 		for(auto it_depends = it->depends.begin(); it_depends != it->depends.end(); it_depends++)
 		{
 			Makefile << (*it_depends)->full_name << " \\" << endl;
@@ -198,7 +206,7 @@ void JustMaker::write_Makefile()
 		#ifdef __linux__
 			Makefile << "export LD_LIBRARY_PATH := " << RPATH << ":$(LD_LIBRARY_PATH)" << endl << endl;
 		#else
-			Makefile << "PATH := " << RPATH << "$(PATH)" << endl << endl;
+			Makefile << "PATH := " << RPATH << ";$(PATH)" << endl << endl;
 		#endif
 	}
 
@@ -225,13 +233,13 @@ void JustMaker::write_Makefile()
 	for(auto it = mains.begin(); it != mains.end(); it++)
 	{
 		Makefile << "$(BINDIR)/" << it->base_name << ".o: $(DEPENDS_" << it->base_name << ")" << endl;
-		Makefile << "\t$(CC) $(FLAGS) $(INCLUDE) $(EXTERN_INCLUDE) -c " << it->full_name << " -o $(BINDIR)/" << it->base_name << ".o" << endl << endl;
+		Makefile << "\t$(CC) $(FLAGS) $(INCLUDE) $(EXTERN_INCLUDE) -c \"" << dir::abs_name(it->full_name) << "\" -o $(BINDIR)/" << it->base_name << ".o" << endl << endl;
 	}
 
 	for(auto it = sources.begin(); it != sources.end(); it++)
 	{
 		Makefile << "$(BINDIR)/" << it->base_name << ".o: $(DEPENDS_" << it->base_name << ")" << endl;
-		Makefile << "\t$(CC) $(FLAGS) $(INCLUDE) $(EXTERN_INCLUDE) -c " << it->full_name << " -o $(BINDIR)/" << it->base_name << ".o" << endl << endl;
+		Makefile << "\t$(CC) $(FLAGS) $(INCLUDE) $(EXTERN_INCLUDE) -c \"" << dir::abs_name(it->full_name) << "\" -o $(BINDIR)/" << it->base_name << ".o" << endl << endl;
 	}
 
 	Makefile << "run: $(EXEDIR)/" << mains.front().base_name << ".exe" << endl;
@@ -244,15 +252,19 @@ void JustMaker::write_Makefile()
 	}
 	
 	Makefile << "clean:" << endl;
-	Makefile << "\trm -f $(BINDIR)/*.o" << endl;
-	for(auto it = mains.begin(); it != mains.end(); it++)
-	{
-		Makefile << "\trm -f $(EXEDIR)/" << it->base_name << ".exe" << endl;
-	}
+	Makefile << "ifndef WINDOWS" << endl;
+	Makefile << "\trm -f $(BINDIR)/*.o $(EXEDIR)/*.exe" << endl;
+	Makefile << "else" << endl;
+	Makefile << "\tdef /S /Q /F $(BINDIR)/*.o $(EXEDIR)/*.exe" << endl;
+	Makefile << "endif" << endl;
 	Makefile << endl;
 
 	Makefile << "clear:" << endl;
+	Makefile << "ifndef WINDOWS" << endl;
 	Makefile << "\trm -f $(BINDIR)/*.o" << endl;
+	Makefile << "else" << endl;
+	Makefile << "\tdef /S /Q /F $(BINDIR)/*.o" << endl;
+	Makefile << "endif" << endl;
 
 	Makefile.close();
 
@@ -376,27 +388,34 @@ void JustMaker::write_JustMake_build(const string& dest_dir)
 	sublime_build.close();
 }
 
+void JustMaker::find_home()
+{
+	string init_path = pwd();
+	string current_path = init_path;
+	Target target(current_path);
+
+	while(target.name[0] != '.' && target.name != "temp" && !is_root(current_path) && !has_makefile(current_path))
+	{
+		cd("..");
+		current_path = pwd();
+		target = Target(current_path);
+	}
+
+	if(!has_makefile(current_path))
+	{
+		cd(init_path);
+		current_path = init_path;
+	}
+	HOME = pwd();
+}
+
 void JustMaker::generate()
 {
 	if(!here)
 	{
-		string init_path = pwd();
-		string current_path = init_path;
-		Target target(current_path);
-
-		while(target.name[0] != '.' && target.name != "temp" && !is_root(current_path) && !has_makefile(current_path))
-		{
-			cd("..");
-			current_path = pwd();
-			target = Target(current_path);
-		}
-
-		if(!has_makefile(current_path))
-		{
-			cd(init_path);
-			current_path = init_path;
-		}
+		find_home();
 	}
+	
 	get_files();
 	read_Makefile();
 	
@@ -434,27 +453,11 @@ void JustMaker::update()
 {
 	if(!here)
 	{
-		string init_path = pwd();
-		string current_path = init_path;
-		Target target(current_path);
-
-		while(target.name[0] != '.' && target.name != "temp" && !is_root(current_path) && !has_makefile(current_path))
-		{
-			cd("..");
-			current_path = pwd();
-			target = Target(current_path);
-		}
-
-		if(!has_makefile(current_path))
-		{
-			cd(init_path);
-			current_path = init_path;
-		}
+		find_home();
 	}
 	get_files();
 	read_Makefile();
 	
-
 	long makefile_data = modify_time(".Makefile");
 
 	for(auto it = sources.begin(); it != sources.end();)
@@ -654,9 +657,9 @@ void JustMaker::read_Makefile()
 		{
 			EXTERN_LIBPATH += (line + '\n');
 			#ifdef __linux__
-				RPATH += (line.substr(2, line.size()-2) + ':');
+				RPATH += (line.substr(2, line.size()-4) + ':');
 			#else
-				RPATH += (line.substr(2, line.size()-2) + ';');
+				RPATH += (line.substr(2, line.size()-4) + ';');
 			#endif
 			getline(Makefile, line);
 		}
@@ -777,6 +780,7 @@ void JustMaker::set_EXEDIR(const string& exedir)
 
 void JustMaker::clean()
 {
+	find_home();
 	cout << "rm -f " << BINDIR << "/*.o" << endl;
 	auto bins = ls(BINDIR);
 	for(auto it = bins.begin(); it != bins.end(); it++)
@@ -799,6 +803,7 @@ void JustMaker::clean()
 
 void JustMaker::clear()
 {
+	find_home();
 	cout << "rm -f " << BINDIR << "/*.o" << endl;
 	auto bins = ls(BINDIR);
 	for(auto it = bins.begin(); it != bins.end(); it++)

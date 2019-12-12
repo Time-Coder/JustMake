@@ -39,6 +39,8 @@ class JustMaker
 	string EXTERN_LIBS;
 	string RPATH;
 
+	string HOME;
+
 public:
 	bool here = false;
 
@@ -50,6 +52,7 @@ private:
 	void move_to_mains(const string& exes);
 	void write_JustMake_build(const string& dest_dir);
 	void write_JustMake_Interactive_build(const string& dest_dir);
+	void find_home();
 
 public:
 	JustMaker(){};

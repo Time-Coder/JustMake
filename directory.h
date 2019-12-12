@@ -39,6 +39,9 @@ namespace dir
 	bool is_file(string filename);
 	bool is_dir(string dirname);
 	bool exist(string name);
+
+	string abs_name(const string& filename);
+	string abs_path(const string& filename);
 }
 
 #endif
